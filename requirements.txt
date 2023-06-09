@@ -8,6 +8,5 @@ duecredit
 pybids
 # tools
 pydeface @ git+https://github.com/poldracklab/pydeface.git
-# TODO: change vferat to nipy once PR merged.
-quickshear @ git+https://github.com/vferat/quickshear.git
+quickshear @ git+https://github.com/nipy/quickshear.git
 nobrainer @ git+https://github.com/neuronets/nobrainer.git

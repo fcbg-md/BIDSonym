@@ -11,7 +11,8 @@ RUN apt-get update -qq \
                   nano \
                   num-utils \
            && rm -rf /var/lib/apt/lists/*
-ENV CONDAS_DIR="/opt/miniconda-latest" \
+ENV SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL="True"
+ENV CONDA_DIR="/opt/miniconda-latest" \
     PATH="/opt/miniconda-latest/bin:$PATH"
 RUN apt-get update -qq \
     && apt-get install -y -q --no-install-recommends \
@@ -99,16 +100,16 @@ RUN apt-get update -qq \
 RUN bash -c 'conda init bash'
 RUN bash -c 'mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && conda activate bidsonym && datalad datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'
 RUN bash -c 'git clone https://github.com/mih/mridefacer'
-ENV MRIDEFACER_DATA_DIR="/mridefacer/data"
+ENV MRIDEFACER_DATA_DIR="C:/Program Files/Git/mridefacer/data"
 RUN bash -c 'mkdir /home/mri-deface-detector && cd /home/mri-deface-detector && npm install sharp --unsafe-perm && npm install -g mri-deface-detector --unsafe-perm && cd ~'
 RUN bash -c 'git clone https://github.com/miykael/gif_your_nifti && cd gif_your_nifti && source activate bidsonym && python setup.py install'
 COPY [".", \
-      "/home/bm"]
+      "C:/Program Files/Git/home/bm"]
 RUN bash -c 'chmod a+x /home/bm/bidsonym/fs_data/mri_deface'
 RUN bash -c 'source activate bidsonym && cd /home/bm && pip install -e .'
 ENV IS_DOCKER="1"
-WORKDIR /tmp/
-ENTRYPOINT ["/neurodocker/startup.sh", "bidsonym"]
+WORKDIR C:/Users/VICTOR~1.FER/AppData/Local/Temp/
+ENTRYPOINT ["C:/Program", "Files/Git/neurodocker/startup.sh", "bidsonym"]
 
 # Save specification to JSON.
 RUN printf '{ \
@@ -142,6 +143,12 @@ RUN printf '{ \
       "name": "run", \
       "kwds": { \
         "command": "apt-get update -qq \\\\\\n    && apt-get install -y -q --no-install-recommends \\\\\\n           build-essential \\\\\\n           curl \\\\\\n           g++ \\\\\\n           gcc \\\\\\n           git \\\\\\n           nano \\\\\\n           num-utils \\\\\\n    && rm -rf /var/lib/apt/lists/*" \
+      } \
+    }, \
+    { \
+      "name": "env", \
+      "kwds": { \
+        "SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL": "True" \
       } \
     }, \
     { \
@@ -199,7 +206,7 @@ RUN printf '{ \
     { \
       "name": "env", \
       "kwds": { \
-        "MRIDEFACER_DATA_DIR": "/mridefacer/data" \
+        "MRIDEFACER_DATA_DIR": "C:/Program Files/Git/mridefacer/data" \
       } \
     }, \
     { \
@@ -219,9 +226,9 @@ RUN printf '{ \
       "kwds": { \
         "source": [ \
           ".", \
-          "/home/bm" \
+          "C:/Program Files/Git/home/bm" \
         ], \
-        "destination": "/home/bm" \
+        "destination": "C:/Program Files/Git/home/bm" \
       } \
     }, \
     { \
@@ -245,14 +252,15 @@ RUN printf '{ \
     { \
       "name": "workdir", \
       "kwds": { \
-        "path": "/tmp/" \
+        "path": "C:/Users/VICTOR~1.FER/AppData/Local/Temp/" \
       } \
     }, \
     { \
       "name": "entrypoint", \
       "kwds": { \
         "args": [ \
-          "/neurodocker/startup.sh", \
+          "C:/Program", \
+          "Files/Git/neurodocker/startup.sh", \
           "bidsonym" \
         ] \
       } \

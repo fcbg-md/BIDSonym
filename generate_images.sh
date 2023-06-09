@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Generate Dockerfile.
-
+# TODO: fix deepdefacer dependencies and remove --env SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True 
 set -e
 
 generate_docker() {
@@ -10,6 +10,7 @@ generate_docker() {
              --yes \
              --pkg-manager apt \
              --install git num-utils gcc g++ curl build-essential nano\
+             --env SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True \
              --miniconda \
                 version=latest \
                 env_name=bidsonym \
