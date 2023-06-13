@@ -10,26 +10,29 @@ generate_docker() {
              --yes \
              --pkg-manager apt \
              --install git num-utils gcc g++ curl build-essential nano\
+             --run-bash "git config --global --add user.name test" \
+             --run-bash "git config --global --add user.email bob@example.com"\
+             --fsl version=6.0.6.4 method=binaries \
+             --run-bash "git clone https://github.com/mih/mridefacer" \
+             --env MRIDEFACER_DATA_DIR=/mridefacer/data \
+             --run-bash "mkdir /home/mri-deface-detector && cd /home/mri-deface-detector && npm install sharp --unsafe-perm && npm install -g mri-deface-detector --unsafe-perm && cd ~" \
+             --env IS_DOCKER=1 \
              --env SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True \
              --miniconda \
                 version=latest \
                 env_name=bidsonym \
                 env_exists=false\
-                conda_install="python=3.10 numpy nipype nibabel pandas" \
-                pip_install="deepdefacer tensorflow scikit-image pydeface==2.0.2 nobrainer==0.4.0 quickshear==1.2.0 datalad datalad-osf" \
-             --fsl version=6.0.6.4 method=binaries \
-             --run-bash "conda init bash" \
-             --run-bash "mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && conda activate bidsonym && datalad datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage ." \
-             --run-bash "git clone https://github.com/mih/mridefacer" \
-             --env MRIDEFACER_DATA_DIR=/mridefacer/data \
-             --run-bash "mkdir /home/mri-deface-detector && cd /home/mri-deface-detector && npm install sharp --unsafe-perm && npm install -g mri-deface-detector --unsafe-perm && cd ~" \
-             --run-bash "git clone https://github.com/miykael/gif_your_nifti && cd gif_your_nifti && source activate bidsonym && python setup.py install" \
+                conda_install="python=3.10" \
+                pip_install="datalad-osf" \
+             --run-bash "apt-get update && apt-get install -y datalad" \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage ." \
              --copy . /home/bm \
              --run-bash "chmod a+x /home/bm/bidsonym/fs_data/mri_deface" \
-             --run-bash "source activate bidsonym && cd /home/bm && pip install -e ." \
-             --env IS_DOCKER=1 \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e ." \
              --workdir '/tmp/' \
-             --entrypoint "/neurodocker/startup.sh  bidsonym"
+             --env CONDA_ENV=bidsonym \
+             --run-bash 'conda init bash && echo "conda activate ${CONDA_ENV}" >> ~/.bashrc' \
+             --entrypoint "/bin/bash -c bidsonym"
 }
 
 # generate files

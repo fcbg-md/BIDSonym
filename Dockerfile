@@ -11,54 +11,8 @@ RUN apt-get update -qq \
                   nano \
                   num-utils \
            && rm -rf /var/lib/apt/lists/*
-ENV SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL="True"
-ENV CONDA_DIR="/opt/miniconda-latest" \
-    PATH="/opt/miniconda-latest/bin:$PATH"
-RUN apt-get update -qq \
-    && apt-get install -y -q --no-install-recommends \
-           bzip2 \
-           ca-certificates \
-           curl \
-    && rm -rf /var/lib/apt/lists/* \
-    # Install dependencies.
-    && export PATH="/opt/miniconda-latest/bin:$PATH" \
-    && echo "Downloading Miniconda installer ..." \
-    && conda_installer="/tmp/miniconda.sh" \
-    && curl -fsSL -o "$conda_installer" https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash "$conda_installer" -b -p /opt/miniconda-latest \
-    && rm -f "$conda_installer" \
-    && conda update -yq -nbase conda \
-    # Prefer packages in conda-forge
-    && conda config --system --prepend channels conda-forge \
-    # Packages in lower-priority channels not considered if a package with the same
-    # name exists in a higher priority channel. Can dramatically speed up installations.
-    # Conda recommends this as a default
-    # https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-channels.html
-    && conda config --set channel_priority strict \
-    && conda config --system --set auto_update_conda false \
-    && conda config --system --set show_channel_urls true \
-    # Enable `conda activate`
-    && conda init bash \
-    && conda create -y  --name bidsonym \
-    && conda install -y  --name bidsonym \
-           "python=3.10" \
-           "numpy" \
-           "nipype" \
-           "nibabel" \
-           "pandas" \
-    && bash -c "source activate bidsonym \
-    &&   python -m pip install --no-cache-dir  \
-             "deepdefacer" \
-             "tensorflow" \
-             "scikit-image" \
-             "pydeface==2.0.2" \
-             "nobrainer==0.4.0" \
-             "quickshear==1.2.0" \
-             "datalad" \
-             "datalad-osf"" \
-    # Clean up
-    && sync && conda clean --all --yes && sync \
-    && rm -rf ~/.cache/pip/*
+RUN bash -c 'git config --global --add user.name test'
+RUN bash -c 'git config --global --add user.email bob@example.com'
 ENV FSLDIR="/opt/fsl-6.0.6.4" \
     PATH="/opt/fsl-6.0.6.4/bin:$PATH" \
     FSLOUTPUTTYPE="NIFTI_GZ" \
@@ -97,19 +51,57 @@ RUN apt-get update -qq \
     && rm -rf /var/lib/apt/lists/* \
     && echo "Installing FSL ..." \
     && curl -fsSL https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/releases/fslinstaller.py | python3 - -d /opt/fsl-6.0.6.4 -V 6.0.6.4
-RUN bash -c 'conda init bash'
-RUN bash -c 'mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && conda activate bidsonym && datalad datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'
 RUN bash -c 'git clone https://github.com/mih/mridefacer'
-ENV MRIDEFACER_DATA_DIR="C:/Program Files/Git/mridefacer/data"
+ENV MRIDEFACER_DATA_DIR="/mridefacer/data"
 RUN bash -c 'mkdir /home/mri-deface-detector && cd /home/mri-deface-detector && npm install sharp --unsafe-perm && npm install -g mri-deface-detector --unsafe-perm && cd ~'
-RUN bash -c 'git clone https://github.com/miykael/gif_your_nifti && cd gif_your_nifti && source activate bidsonym && python setup.py install'
-COPY [".", \
-      "C:/Program Files/Git/home/bm"]
-RUN bash -c 'chmod a+x /home/bm/bidsonym/fs_data/mri_deface'
-RUN bash -c 'source activate bidsonym && cd /home/bm && pip install -e .'
 ENV IS_DOCKER="1"
-WORKDIR C:/Users/VICTOR~1.FER/AppData/Local/Temp/
-ENTRYPOINT ["C:/Program", "Files/Git/neurodocker/startup.sh", "bidsonym"]
+ENV SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL="True"
+ENV CONDA_DIR="/opt/miniconda-latest" \
+    PATH="/opt/miniconda-latest/bin:$PATH"
+RUN apt-get update -qq \
+    && apt-get install -y -q --no-install-recommends \
+           bzip2 \
+           ca-certificates \
+           curl \
+    && rm -rf /var/lib/apt/lists/* \
+    # Install dependencies.
+    && export PATH="/opt/miniconda-latest/bin:$PATH" \
+    && echo "Downloading Miniconda installer ..." \
+    && conda_installer="/tmp/miniconda.sh" \
+    && curl -fsSL -o "$conda_installer" https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash "$conda_installer" -b -p /opt/miniconda-latest \
+    && rm -f "$conda_installer" \
+    && conda update -yq -nbase conda \
+    # Prefer packages in conda-forge
+    && conda config --system --prepend channels conda-forge \
+    # Packages in lower-priority channels not considered if a package with the same
+    # name exists in a higher priority channel. Can dramatically speed up installations.
+    # Conda recommends this as a default
+    # https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-channels.html
+    && conda config --set channel_priority strict \
+    && conda config --system --set auto_update_conda false \
+    && conda config --system --set show_channel_urls true \
+    # Enable `conda activate`
+    && conda init bash \
+    && conda create -y  --name bidsonym \
+    && conda install -y  --name bidsonym \
+           "python=3.10" \
+    && bash -c "source activate bidsonym \
+    &&   python -m pip install --no-cache-dir  \
+             "datalad-osf"" \
+    # Clean up
+    && sync && conda clean --all --yes && sync \
+    && rm -rf ~/.cache/pip/*
+RUN bash -c 'apt-get update && apt-get install -y datalad'
+RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'
+COPY [".", \
+      "/home/bm"]
+RUN bash -c 'chmod a+x /home/bm/bidsonym/fs_data/mri_deface'
+RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e .'
+WORKDIR /tmp/
+ENV CONDA_ENV="bidsonym"
+RUN bash -c 'conda init bash && echo "conda activate ${CONDA_ENV}" >> ~/.bashrc'
+ENTRYPOINT ["/bin/bash", "bidsonym"]
 
 # Save specification to JSON.
 RUN printf '{ \
@@ -146,22 +138,15 @@ RUN printf '{ \
       } \
     }, \
     { \
-      "name": "env", \
+      "name": "run", \
       "kwds": { \
-        "SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL": "True" \
-      } \
-    }, \
-    { \
-      "name": "env", \
-      "kwds": { \
-        "CONDA_DIR": "/opt/miniconda-latest", \
-        "PATH": "/opt/miniconda-latest/bin:$PATH" \
+        "command": "bash -c '"'"'git config --global --add user.name test'"'"'" \
       } \
     }, \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "apt-get update -qq\\napt-get install -y -q --no-install-recommends \\\\\\n    bzip2 \\\\\\n    ca-certificates \\\\\\n    curl\\nrm -rf /var/lib/apt/lists/*\\n# Install dependencies.\\nexport PATH=\\"/opt/miniconda-latest/bin:$PATH\\"\\necho \\"Downloading Miniconda installer ...\\"\\nconda_installer=\\"/tmp/miniconda.sh\\"\\ncurl -fsSL -o \\"$conda_installer\\" https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh\\nbash \\"$conda_installer\\" -b -p /opt/miniconda-latest\\nrm -f \\"$conda_installer\\"\\nconda update -yq -nbase conda\\n# Prefer packages in conda-forge\\nconda config --system --prepend channels conda-forge\\n# Packages in lower-priority channels not considered if a package with the same\\n# name exists in a higher priority channel. Can dramatically speed up installations.\\n# Conda recommends this as a default\\n# https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-channels.html\\nconda config --set channel_priority strict\\nconda config --system --set auto_update_conda false\\nconda config --system --set show_channel_urls true\\n# Enable `conda activate`\\nconda init bash\\nconda create -y  --name bidsonym\\nconda install -y  --name bidsonym \\\\\\n    \\"python=3.10\\" \\\\\\n    \\"numpy\\" \\\\\\n    \\"nipype\\" \\\\\\n    \\"nibabel\\" \\\\\\n    \\"pandas\\"\\nbash -c \\"source activate bidsonym\\n  python -m pip install --no-cache-dir  \\\\\\n      \\"deepdefacer\\" \\\\\\n      \\"tensorflow\\" \\\\\\n      \\"scikit-image\\" \\\\\\n      \\"pydeface==2.0.2\\" \\\\\\n      \\"nobrainer==0.4.0\\" \\\\\\n      \\"quickshear==1.2.0\\" \\\\\\n      \\"datalad\\" \\\\\\n      \\"datalad-osf\\"\\"\\n# Clean up\\nsync && conda clean --all --yes && sync\\nrm -rf ~/.cache/pip/*" \
+        "command": "bash -c '"'"'git config --global --add user.email bob@example.com'"'"'" \
       } \
     }, \
     { \
@@ -188,25 +173,13 @@ RUN printf '{ \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "bash -c '"'"'conda init bash'"'"'" \
-      } \
-    }, \
-    { \
-      "name": "run", \
-      "kwds": { \
-        "command": "bash -c '"'"'mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && conda activate bidsonym && datalad datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'"'"'" \
-      } \
-    }, \
-    { \
-      "name": "run", \
-      "kwds": { \
         "command": "bash -c '"'"'git clone https://github.com/mih/mridefacer'"'"'" \
       } \
     }, \
     { \
       "name": "env", \
       "kwds": { \
-        "MRIDEFACER_DATA_DIR": "C:/Program Files/Git/mridefacer/data" \
+        "MRIDEFACER_DATA_DIR": "/mridefacer/data" \
       } \
     }, \
     { \
@@ -216,9 +189,40 @@ RUN printf '{ \
       } \
     }, \
     { \
+      "name": "env", \
+      "kwds": { \
+        "IS_DOCKER": "1" \
+      } \
+    }, \
+    { \
+      "name": "env", \
+      "kwds": { \
+        "SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL": "True" \
+      } \
+    }, \
+    { \
+      "name": "env", \
+      "kwds": { \
+        "CONDA_DIR": "/opt/miniconda-latest", \
+        "PATH": "/opt/miniconda-latest/bin:$PATH" \
+      } \
+    }, \
+    { \
       "name": "run", \
       "kwds": { \
-        "command": "bash -c '"'"'git clone https://github.com/miykael/gif_your_nifti && cd gif_your_nifti && source activate bidsonym && python setup.py install'"'"'" \
+        "command": "apt-get update -qq\\napt-get install -y -q --no-install-recommends \\\\\\n    bzip2 \\\\\\n    ca-certificates \\\\\\n    curl\\nrm -rf /var/lib/apt/lists/*\\n# Install dependencies.\\nexport PATH=\\"/opt/miniconda-latest/bin:$PATH\\"\\necho \\"Downloading Miniconda installer ...\\"\\nconda_installer=\\"/tmp/miniconda.sh\\"\\ncurl -fsSL -o \\"$conda_installer\\" https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh\\nbash \\"$conda_installer\\" -b -p /opt/miniconda-latest\\nrm -f \\"$conda_installer\\"\\nconda update -yq -nbase conda\\n# Prefer packages in conda-forge\\nconda config --system --prepend channels conda-forge\\n# Packages in lower-priority channels not considered if a package with the same\\n# name exists in a higher priority channel. Can dramatically speed up installations.\\n# Conda recommends this as a default\\n# https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-channels.html\\nconda config --set channel_priority strict\\nconda config --system --set auto_update_conda false\\nconda config --system --set show_channel_urls true\\n# Enable `conda activate`\\nconda init bash\\nconda create -y  --name bidsonym\\nconda install -y  --name bidsonym \\\\\\n    \\"python=3.10\\"\\nbash -c \\"source activate bidsonym\\n  python -m pip install --no-cache-dir  \\\\\\n      \\"datalad-osf\\"\\"\\n# Clean up\\nsync && conda clean --all --yes && sync\\nrm -rf ~/.cache/pip/*" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'apt-get update && apt-get install -y datalad'"'"'" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'"'"'" \
       } \
     }, \
     { \
@@ -226,9 +230,9 @@ RUN printf '{ \
       "kwds": { \
         "source": [ \
           ".", \
-          "C:/Program Files/Git/home/bm" \
+          "/home/bm" \
         ], \
-        "destination": "C:/Program Files/Git/home/bm" \
+        "destination": "/home/bm" \
       } \
     }, \
     { \
@@ -240,27 +244,32 @@ RUN printf '{ \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "bash -c '"'"'source activate bidsonym && cd /home/bm && pip install -e .'"'"'" \
-      } \
-    }, \
-    { \
-      "name": "env", \
-      "kwds": { \
-        "IS_DOCKER": "1" \
+        "command": "bash -c '"'"'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e .'"'"'" \
       } \
     }, \
     { \
       "name": "workdir", \
       "kwds": { \
-        "path": "C:/Users/VICTOR~1.FER/AppData/Local/Temp/" \
+        "path": "/tmp/" \
+      } \
+    }, \
+    { \
+      "name": "env", \
+      "kwds": { \
+        "CONDA_ENV": "bidsonym" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'conda init bash && echo \\"conda activate ${CONDA_ENV}\\" >> ~/.bashrc'"'"'" \
       } \
     }, \
     { \
       "name": "entrypoint", \
       "kwds": { \
         "args": [ \
-          "C:/Program", \
-          "Files/Git/neurodocker/startup.sh", \
+          "/bin/bash", \
           "bidsonym" \
         ] \
       } \
