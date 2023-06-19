@@ -103,7 +103,6 @@ RUN bash -c 'echo "#!/bin/bash" >> /entrypoint.sh'
 RUN bash -c 'echo "source activate bidsonym" >> /entrypoint.sh'
 RUN bash -c 'echo "bidsonym \"\$@\"" >> /entrypoint.sh'
 RUN bash -c 'chmod +x /entrypoint.sh'
-ENV NIPYPE_NO_ET="1"
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Save specification to JSON.
@@ -278,12 +277,6 @@ RUN printf '{ \
       "name": "run", \
       "kwds": { \
         "command": "bash -c '"'"'chmod +x /entrypoint.sh'"'"'" \
-      } \
-    }, \
-    { \
-      "name": "env", \
-      "kwds": { \
-        "NIPYPE_NO_ET": "1" \
       } \
     }, \
     { \
