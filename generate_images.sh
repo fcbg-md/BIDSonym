@@ -30,9 +30,11 @@ generate_docker() {
              --run-bash "chmod a+x /home/bm/bidsonym/fs_data/mri_deface" \
              --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e ." \
              --workdir '/tmp/' \
-             --env CONDA_ENV=bidsonym \
-             --run-bash 'conda init bash && echo "conda activate ${CONDA_ENV}" >> ~/.bashrc' \
-             --entrypoint "/bin/bash -c bidsonym"
+             --run-bash 'echo "#!/bin/bash" >> /entrypoint.sh' \
+             --run-bash 'echo "source activate bidsonym" >> /entrypoint.sh' \
+             --run-bash 'echo "bidsonym \"\$@\"" >> /entrypoint.sh'\
+             --run-bash 'chmod +x /entrypoint.sh'\
+             --entrypoint "/entrypoint.sh"
 }
 
 # generate files

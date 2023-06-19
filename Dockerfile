@@ -99,9 +99,11 @@ COPY [".", \
 RUN bash -c 'chmod a+x /home/bm/bidsonym/fs_data/mri_deface'
 RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e .'
 WORKDIR /tmp/
-ENV CONDA_ENV="bidsonym"
-RUN bash -c 'conda init bash && echo "conda activate ${CONDA_ENV}" >> ~/.bashrc'
-ENTRYPOINT ["/bin/bash", "bidsonym"]
+RUN bash -c 'echo "#!/bin/bash" >> /entrypoint.sh'
+RUN bash -c 'echo "source activate bidsonym" >> /entrypoint.sh'
+RUN bash -c 'echo "bidsonym \"\$@\"" >> /entrypoint.sh'
+RUN bash -c 'chmod +x /entrypoint.sh'
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Save specification to JSON.
 RUN printf '{ \
@@ -254,23 +256,34 @@ RUN printf '{ \
       } \
     }, \
     { \
-      "name": "env", \
+      "name": "run", \
       "kwds": { \
-        "CONDA_ENV": "bidsonym" \
+        "command": "bash -c '"'"'echo \\"#!/bin/bash\\" >> /entrypoint.sh'"'"'" \
       } \
     }, \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "bash -c '"'"'conda init bash && echo \\"conda activate ${CONDA_ENV}\\" >> ~/.bashrc'"'"'" \
+        "command": "bash -c '"'"'echo \\"source activate bidsonym\\" >> /entrypoint.sh'"'"'" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'echo \\"bidsonym \\\\\\"\\\\$@\\\\\\"\\" >> /entrypoint.sh'"'"'" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'chmod +x /entrypoint.sh'"'"'" \
       } \
     }, \
     { \
       "name": "entrypoint", \
       "kwds": { \
         "args": [ \
-          "/bin/bash", \
-          "bidsonym" \
+          "/entrypoint.sh" \
         ] \
       } \
     } \
