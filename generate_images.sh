@@ -34,6 +34,7 @@ generate_docker() {
              --run-bash 'echo "source activate bidsonym" >> /entrypoint.sh' \
              --run-bash 'echo "bidsonym \"\$@\"" >> /entrypoint.sh'\
              --run-bash 'chmod +x /entrypoint.sh'\
+             --env NIPYPE_NO_ET=1 \
              --entrypoint "/entrypoint.sh"
 }
 
