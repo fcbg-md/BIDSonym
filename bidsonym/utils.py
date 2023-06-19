@@ -11,6 +11,7 @@ from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import BET
 
+from ._logs import logger
 
 def check_outpath(bids_dir, subject_label):
     """
@@ -113,8 +114,8 @@ def check_meta_data(bids_dir, subject_label, prob_fields=None):
                                       '_desc-headerinfo.csv'),
                          index=False)
 
-    print('the following meta-data files will be checked:')
-    print(*list_meta_files, sep='\n')
+    logger.info('the following meta-data files will be checked:')
+    logger.info(*list_meta_files, sep='\n')
 
     for meta_file in list_meta_files:
 
@@ -187,11 +188,11 @@ def del_meta_data(bids_dir, subject_label, fields_del):
 
     fields_del = fields_del
 
-    print('working on %s' % subject_label)
-    print('found the following meta-data files:')
-    print(*list_meta_files, sep='\n')
-    print('the following fields will be deleted:')
-    print(*fields_del, sep='\n')
+    logger.info('working on %s' % subject_label)
+    logger.info('found the following meta-data files:')
+    logger.info(*list_meta_files, sep='\n')
+    logger.info('the following fields will be deleted:')
+    logger.info(*fields_del, sep='\n')
 
     list_meta_files.sort()
     list_meta_files_deid.sort()
@@ -259,7 +260,7 @@ def brain_extraction_nb(image, subject_label, bids_dir):
 
     cmd = ['nobrainer',
            'predict',
-           '--model=/opt/nobrainer/models/brain-extraction-unet-128iso-model.h5',
+           '--model=/opt/nobrainer/models/trained-models/neuronets/brainy/0.1.0/weights/brain-extraction-unet-128iso-model.h5',
            '--verbose',
            image,
            outfile,
@@ -426,7 +427,7 @@ def validate_input_dir(exec_env, bids_dir, participant_label):
         try:
             subprocess.check_call(['bids-validator', bids_dir, '-c', temp.name])
         except FileNotFoundError:
-            print("bids-validator does not appear to be installed", file=sys.stderr)
+            raise FileNotFoundError("bids-validator does not appear to be installed.")
 
 
 def deface_t2w(image, warped_mask, outfile):
