@@ -113,7 +113,7 @@ def run_deeid():
     list_field_del = args.del_meta
 
     for subject_label in subjects_to_analyze:
-
+        #TODO refractor sessions_to_analyze
         sessions_to_analyze = layout.get(return_type='id', subject=subject_label, target='session')
 
         if not sessions_to_analyze:
@@ -130,7 +130,7 @@ def run_deeid():
                                   return_type='filename', session=sessions_to_analyze)
         for T1_file in list_t1w:
             check_outpath(args.bids_dir, subject_label)
-            if args.brainextraction == 'bet':
+            if args.brainextraction == 'bet': # TODO: move at top of func
                 if args.bet_frac is None:
                     raise ValueError("If you want to use BET for pre-defacing brain extraction,"
                                     "please provide a Frac value. For example: --bet_frac 0.5")
@@ -174,10 +174,11 @@ def run_deeid():
                         run_brain_extraction_nb(T2_file, subject_label, args.bids_dir)
 
                     source_t2w = copy_no_deid(args.bids_dir, subject_label, T2_file)
-                    run_t2w_deface(source_t2w, T1_file, T2_file)
+                    run_t2w_deface(source_t2w, T1_file, T2_file) #TODO: check if T1_file is correct
 
         rename_non_deid(args.bids_dir, subject_label)
-
+        #TODO: t2w=None if args.deface_t2w is False else True
+        #TODO: session = None if not sessions_to_analyse else sessions_to_analyse
         if not sessions_to_analyze and args.deface_t2w is False:
             create_graphics(args.bids_dir, subject_label, session=None, t2w=None)
         elif sessions_to_analyze and args.deface_t2w is False:
