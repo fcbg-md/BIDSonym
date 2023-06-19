@@ -11,4 +11,4 @@ gif_your_nifti @ git+https://github.com/miykael/gif_your_nifti.git
 pydeface==2.0.2
 quickshear==1.2.0
 nobrainer==0.4.0
-deepdefacer[tf_cpu]
+deepdefacer
