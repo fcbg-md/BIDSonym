@@ -6,3 +6,9 @@ nipype
 nilearn
 duecredit
 pybids
+gif_your_nifti @ git+https://github.com/miykael/gif_your_nifti.git
+# tools
+pydeface==2.0.2
+quickshear==1.2.0
+nobrainer==0.4.0
+deepdefacer

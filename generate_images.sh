@@ -1,36 +1,40 @@
-#Generate Dockerfile.
-
 #!/bin/sh
 
- set -e
+#Generate Dockerfile.
+# TODO: fix deepdefacer dependencies and remove --env SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True 
+set -e
 
 generate_docker() {
-  docker run --rm kaczmarj/neurodocker:0.6.0 generate docker \
-             --base neurodebian:stretch-non-free \
+  docker run --rm repronim/neurodocker:0.9.5 generate docker \
+             --base-image bids/base_validator \
+             --yes \
              --pkg-manager apt \
-             --install fsl-core fsl-mni152-templates git num-utils gcc g++ curl build-essential nano\
-             --run-bash "curl -sL https://deb.nodesource.com/setup_10.x | bash - && apt-get install -y nodejs && apt-get install -y npm"\
-             --add-to-entrypoint "source /etc/fsl/fsl.sh" \
-             --miniconda \
-                conda_install="python=3.6 numpy nipype nibabel pandas" \
-                pip_install='deepdefacer tensorflow scikit-image' \
-                create_env='bidsonym' \
-                activate=true \
-             --run-bash "source activate bidsonym && git clone https://github.com/poldracklab/pydeface.git && cd pydeface && python setup.py install && cd -" \
-             --run-bash "source activate bidsonym && git clone https://github.com/nipy/quickshear.git  && cd quickshear && python setup.py install && cd -" \
-             --run-bash "source activate bidsonym && git clone https://github.com/neuronets/nobrainer.git  && cd nobrainer && python setup.py install && cd -" \
-             --run-bash "mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && curl -LJO  https://github.com/neuronets/nobrainer-models/releases/download/0.1/brain-extraction-unet-128iso-model.h5 && cd ~ " \
+             --install git num-utils gcc g++ curl build-essential nano\
+             --run-bash "git config --global --add user.name test" \
+             --run-bash "git config --global --add user.email bob@example.com"\
+             --fsl version=6.0.6.4 method=binaries \
              --run-bash "git clone https://github.com/mih/mridefacer" \
              --env MRIDEFACER_DATA_DIR=/mridefacer/data \
-             --run-bash "npm install -g bids-validator@1.5.4" \
              --run-bash "mkdir /home/mri-deface-detector && cd /home/mri-deface-detector && npm install sharp --unsafe-perm && npm install -g mri-deface-detector --unsafe-perm && cd ~" \
-             --run-bash "git clone https://github.com/miykael/gif_your_nifti && cd gif_your_nifti && source activate bidsonym && python setup.py install" \
+             --env IS_DOCKER=1 \
+             --env SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True \
+             --miniconda \
+                version=latest \
+                env_name=bidsonym \
+                env_exists=false\
+                conda_install="python=3.10" \
+                pip_install="datalad-osf" \
+             --run-bash "apt-get update && apt-get install -y datalad" \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage ." \
              --copy . /home/bm \
              --run-bash "chmod a+x /home/bm/bidsonym/fs_data/mri_deface" \
-             --run-bash "source activate bidsonym && cd /home/bm && pip install -e ." \
-             --env IS_DOCKER=1 \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e ." \
              --workdir '/tmp/' \
-             --entrypoint "/neurodocker/startup.sh  bidsonym"
+             --run-bash 'echo "#!/bin/bash" >> /entrypoint.sh' \
+             --run-bash 'echo "source activate bidsonym" >> /entrypoint.sh' \
+             --run-bash 'echo "bidsonym \"\$@\"" >> /entrypoint.sh'\
+             --run-bash 'chmod +x /entrypoint.sh'\
+             --entrypoint "/entrypoint.sh"
 }
 
 # generate files

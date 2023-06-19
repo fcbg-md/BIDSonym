@@ -91,8 +91,6 @@ This App has the following command line arguments:
 	positional arguments:
 	  bids_dir              The directory with the input dataset formatted
 				according to the BIDS standard.
-	  output_dir            The directory where the not de-identified raw files should be stored,
-				in case you decide to keep them.
 	  {participant,group}   Level of the analysis that will be performed. Multiple
 				participant level analyses can be run independently
 				(in parallel) using the same output_dir.
@@ -118,7 +116,7 @@ This App has the following command line arguments:
 				Indicate (via strings) if and which information from the :code:`.json` meta-data
 				files should be deleted. If so, the original :code:`.json` files
 				will be copied to :code:`sourcedata/`.
-	  --brainextraction {BET, no_brainer}
+	  --brainextraction {bet, no_brainer}
 				What algorithm should be used for pre-defacing brain extraction
 				(outputs will be used in quality control).
 	  --bet_frac [BET_FRAC]
@@ -161,6 +159,19 @@ Following the `BIDS apps standard <https://journals.plos.org/ploscompbiol/articl
 To get the BIDSonym Docker image, you need to `install docker <https://docs.docker.com/install/>`_ and within the terminal of your choice type:
 
 :code:`docker pull peerherholz/bidsonym`
+
+Content
+=======
+
+The dockerfile is generated using neurodocker: see `generate_images.sh` for details.
+
+The image contains the following software:
+- base image: bids/base_validator with bids-validator@1.9.9
+- FSL 6.0.6.4
+- conda with python 3.10
+- pydeface==2.0.2 
+- nobrainer==0.4.0 
+- quickshear==1.2.0
 
 
 Documentation

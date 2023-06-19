@@ -7,7 +7,10 @@ from bidsonym.utils import (check_outpath, copy_no_deid, check_meta_data, del_me
                             run_brain_extraction_nb, run_brain_extraction_bet, validate_input_dir,
                             rename_non_deid, clean_up_files)
 from bidsonym.reports import create_graphics
+
 from bids import BIDSLayout
+
+from ._logs import logger
 
 
 def get_parser():
@@ -81,9 +84,9 @@ def run_deeid():
                         "(--brainextration bet) or nobrainer (--brainextraction nobrainer).")
 
     if args.skip_bids_validation:
-        print("Input data will not be checked for BIDS compliance.")
+        logger.info("Input data will not be checked for BIDS compliance.")
     else:
-        print("Making sure the input data is BIDS compliant "
+        logger.info("Making sure the input data is BIDS compliant "
               "(warnings can be ignored in most cases).")
         validate_input_dir(exec_env, args.bids_dir, args.participant_label)
 
@@ -93,7 +96,7 @@ def run_deeid():
         if args.participant_label:
             subjects_to_analyze = args.participant_label
         else:
-            print("No participant label indicated. Please do so.")
+             raise ValueError("No participant label indicated. Please do so.")
     else:
         subjects_to_analyze = layout.get(return_type='id', target='subject')
 
@@ -102,23 +105,23 @@ def run_deeid():
         if part not in layout.get_subjects():
             list_part_prob.append(part)
     if len(list_part_prob) >= 1:
-        raise Exception("The participant(s) you indicated are not present in the BIDS dataset, please check again."
+        raise ValueError("The participant(s) you indicated are not present in the BIDS dataset, please check again."
                         "This refers to:")
-        print(list_part_prob)
-
-    sessions_to_analyze = layout.get(return_type='id', target='session')
-
-    if not sessions_to_analyze:
-        print('Processing data from one session.')
-    else:
-        print('Processing data from %s sessions:' % str(len(sessions_to_analyze)))
-        print(sessions_to_analyze)
 
     list_check_meta = args.check_meta
 
     list_field_del = args.del_meta
 
     for subject_label in subjects_to_analyze:
+        #TODO refractor sessions_to_analyze
+        sessions_to_analyze = layout.get(return_type='id', subject=subject_label, target='session')
+
+        if not sessions_to_analyze:
+            logger.info('Processing data from one session.')
+        else:
+            logger.info('Processing data from %s sessions:' % str(len(sessions_to_analyze)))
+            logger.info(sessions_to_analyze)
+
         if not sessions_to_analyze:
             list_t1w = layout.get(subject=subject_label, extension='nii.gz', suffix='T1w',
                                   return_type='filename')
@@ -127,9 +130,9 @@ def run_deeid():
                                   return_type='filename', session=sessions_to_analyze)
         for T1_file in list_t1w:
             check_outpath(args.bids_dir, subject_label)
-            if args.brainextraction == 'bet':
+            if args.brainextraction == 'bet': # TODO: move at top of func
                 if args.bet_frac is None:
-                    raise Exception("If you want to use BET for pre-defacing brain extraction,"
+                    raise ValueError("If you want to use BET for pre-defacing brain extraction,"
                                     "please provide a Frac value. For example: --bet_frac 0.5")
                 else:
                     run_brain_extraction_bet(T1_file, args.bet_frac[0], subject_label, args.bids_dir)
@@ -160,21 +163,22 @@ def run_deeid():
                 list_t2w = layout.get(subject=subject_label, extension='nii.gz', suffix='T2w',
                                       return_type='filename', session=sessions_to_analyze)
             if list_t2w == []:
-                raise Exception("You indicated that a T2w image should be defaced as well."
+                logger.warn("You indicated that a T2w image should be defaced as well."
                                 "However, no T2w image exists for subject %s."
                                 "Please check again." % subject_label)
+            else:
+                for T2_file in list_t2w:
+                    if args.brainextraction == 'bet':
+                        run_brain_extraction_bet(T2_file, args.bet_frac[0], subject_label, args.bids_dir)
+                    elif args.brainextraction == 'nobrainer':
+                        run_brain_extraction_nb(T2_file, subject_label, args.bids_dir)
 
-            for T2_file in list_t2w:
-                if args.brainextraction == 'bet':
-                    run_brain_extraction_bet(T2_file, args.bet_frac[0], subject_label, args.bids_dir)
-                elif args.brainextraction == 'nobrainer':
-                    run_brain_extraction_nb(T2_file, subject_label, args.bids_dir)
-
-                source_t2w = copy_no_deid(args.bids_dir, subject_label, T2_file)
-                run_t2w_deface(source_t2w, T1_file, T2_file)
+                    source_t2w = copy_no_deid(args.bids_dir, subject_label, T2_file)
+                    run_t2w_deface(source_t2w, T1_file, T2_file) #TODO: check if T1_file is correct
 
         rename_non_deid(args.bids_dir, subject_label)
-
+        #TODO: t2w=None if args.deface_t2w is False else True
+        #TODO: session = None if not sessions_to_analyse else sessions_to_analyse
         if not sessions_to_analyze and args.deface_t2w is False:
             create_graphics(args.bids_dir, subject_label, session=None, t2w=None)
         elif sessions_to_analyze and args.deface_t2w is False:
@@ -194,5 +198,4 @@ def run_deeid():
 
 
 if __name__ == "__main__":
-
     run_deeid()
