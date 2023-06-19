@@ -11,7 +11,7 @@ def plot_defaced(bids_dir, subject_label, session=None, t2w=None):
         Label of subject to be plotted (without 'sub-').
     session : str, optional
         If multiple sessions exist, create one plot per session.
-    session : bool, optional
+    t2w : bool, optional
         If T2w image exists, create a plot for defaced T2w.
     """
 
@@ -67,7 +67,7 @@ def plot_defaced(bids_dir, subject_label, session=None, t2w=None):
             plt.savefig(opj(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
                             t2w[t2w.rfind('/')+1:t2w.rfind('.nii')] + '_desc-brainmaskdeid.png'))
 
-    return (t1w, t2w)
+    return ()
 
 
 def gif_defaced(bids_dir, subject_label, session=None, t2w=None):
