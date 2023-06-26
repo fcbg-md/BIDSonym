@@ -40,7 +40,7 @@ def build_container(dockerfile_path, image_tag):
             print("Error parsing output from docker image build: %s" % output)
 
 image_tag = "bidsonym-test:latest"
-build = False
+build = True
 if build:
     dockerfile_path =  os.path.dirname(os.path.abspath(__file__))
     build_container(dockerfile_path, image_tag)

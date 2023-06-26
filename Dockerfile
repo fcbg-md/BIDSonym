@@ -94,10 +94,13 @@ RUN apt-get update -qq \
     && rm -rf ~/.cache/pip/*
 RUN bash -c 'apt-get update && apt-get install -y datalad'
 RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage .'
+COPY ["./requirements.txt", \
+      "/home/bm/requirements.txt"]
+RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt'
 COPY [".", \
       "/home/bm"]
 RUN bash -c 'chmod a+x /home/bm/bidsonym/fs_data/mri_deface'
-RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e .'
+RUN bash -c 'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -e .'
 WORKDIR /tmp/
 RUN bash -c 'echo "#!/bin/bash" >> /entrypoint.sh'
 RUN bash -c 'echo "source activate bidsonym" >> /entrypoint.sh'
@@ -231,6 +234,22 @@ RUN printf '{ \
       "name": "copy", \
       "kwds": { \
         "source": [ \
+          "./requirements.txt", \
+          "/home/bm/requirements.txt" \
+        ], \
+        "destination": "/home/bm/requirements.txt" \
+      } \
+    }, \
+    { \
+      "name": "run", \
+      "kwds": { \
+        "command": "bash -c '"'"'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt'"'"'" \
+      } \
+    }, \
+    { \
+      "name": "copy", \
+      "kwds": { \
+        "source": [ \
           ".", \
           "/home/bm" \
         ], \
@@ -246,7 +265,7 @@ RUN printf '{ \
     { \
       "name": "run", \
       "kwds": { \
-        "command": "bash -c '"'"'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e .'"'"'" \
+        "command": "bash -c '"'"'source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -e .'"'"'" \
       } \
     }, \
     { \

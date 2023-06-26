@@ -10,7 +10,6 @@ from bidsonym.defacing_algorithms import (
     run_t2w_deface,
 )
 from bidsonym.utils import (
-    check_outpath,
     copy_no_deid,
     check_meta_data,
     del_meta_data,
@@ -172,11 +171,13 @@ def run_deeid(
 
     # Analyze each subject
     for subject_label in subjects_to_analyze:
+        logger.info("Processing participant %s" % subject_label)
         list_t1w = layout.get(subject=subject_label, extension="nii.gz", suffix="T1w")
         # Process T1 files.
         for t1w in list_t1w:
             # t1w is a pybids File object
             T1_file = t1w.relpath()
+            logger.info("Processing T1w image %s" % T1_file)
             if "session" in T1_file.entities.keys():
                 session = T1_file.entities["session"]
             else:
@@ -189,7 +190,7 @@ def run_deeid(
 
             # Check metadata
             check_meta_data(bids_dir, subject_label, check_meta)
-            source_t1w = copy_no_deid(bids_dir, subject_label, t1w)
+            source_t1w = copy_no_deid(bids_dir, t1w)
             # Delete metadata
             if del_meta:
                 del_meta_data(bids_dir, subject_label, del_meta)
@@ -218,6 +219,7 @@ def run_deeid(
                     )
                 else:
                     # deface T2w
+                    logger.info("Processing T2w image %s" % T2_file)
                     if brainextraction == "bet":
                         run_brain_extraction_bet(
                             T2_file, bet_frac[0], subject_label, bids_dir
@@ -225,7 +227,7 @@ def run_deeid(
                     elif brainextraction == "nobrainer":
                         run_brain_extraction_nb(T2_file, subject_label, bids_dir)
 
-                    source_t2w = copy_no_deid(bids_dir, subject_label, T2_file)
+                    source_t2w = copy_no_deid(bids_dir, T2_file)
                     run_t2w_deface(source_t2w, T1_file, T2_file)
             # Create graphics.
             create_graphics(bids_dir, subject_label, session=session, t2w=T2_file)
@@ -248,15 +250,15 @@ if __name__ == "__main__":
 
     args = get_parser().parse_args()
     run_deeid(
-        args.bids_dir,
-        args.analysis_level,
-        args.participant_label,
-        args.deid,
-        args.deface_t2w,
-        args.check_meta,
-        args.del_meta,
-        args.brainextraction,
-        args.bet_frac,
-        args.skip_bids_validation,
+        bids_dir=args.bids_dir,
+        analysis_level=args.analysis_level,
+        participant_label=args.participant_label,
+        deid=args.deid,
+        deface_t2w=args.deface_t2w,
+        check_meta=args.check_meta,
+        del_meta=args.del_meta,
+        brainextraction=args.brainextraction,
+        bet_frac=args.bet_frac,
+        skip_bids_validation=args.skip_bids_validation,
         exec_env=exec_env,
     )

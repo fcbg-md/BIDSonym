@@ -26,9 +26,11 @@ generate_docker() {
                 pip_install="datalad-osf" \
              --run-bash "apt-get update && apt-get install -y datalad" \
              --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && mkdir -p /opt/nobrainer/models && cd /opt/nobrainer/models && datalad clone https://github.com/neuronets/trained-models && cd trained-models && git-annex enableremote osf-storage && datalad get -s osf-storage ." \
+             --copy ./requirements.txt /home/bm/requirements.txt \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt"\
              --copy . /home/bm \
              --run-bash "chmod a+x /home/bm/bidsonym/fs_data/mri_deface" \
-             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -r requirements.txt && pip install -e ." \
+             --run-bash "source activate /opt/miniconda-latest/envs/bidsonym && cd /home/bm && pip install -e ." \
              --workdir '/tmp/' \
              --run-bash 'echo "#!/bin/bash" >> /entrypoint.sh' \
              --run-bash 'echo "source activate bidsonym" >> /entrypoint.sh' \

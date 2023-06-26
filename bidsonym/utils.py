@@ -11,7 +11,7 @@ from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import BET
 
-from pybids import BIDSLayout
+from bids import BIDSLayout
 
 from ._logs import logger
 
@@ -22,27 +22,7 @@ def move_file(source_path, destination_path):
     shutil.move(source_path, destination_path)
 
 
-def check_outpath(bids_dir, subject_label):
-    """
-    Check if output paths exist, if not create them.
-
-    Parameters
-    ----------
-    bids_dir : str
-        Path to BIDS root directory.
-    subject_label : str
-        Label of subject to be checked (without 'sub-').
-    """
-
-    out_path = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s" % subject_label)
-
-    if os.path.isdir(out_path) is False:
-        os.makedirs(out_path)
-
-
 def copy_no_deid(bids_dir, file):
-    # deid layout
-    layout = BIDSLayout(bids_dir)
     # no deid layout
     nodeid_path = os.path.join(bids_dir, "sourcedata", "bidsonym")
     nodeid_layout =  BIDSLayout(nodeid_path)
@@ -434,6 +414,7 @@ def deface_t2w(image, warped_mask, outfile):
     masked_brain = Nifti1Image(outdata, infile_img.get_affine(),
                                infile_img.get_header())
     masked_brain.to_filename(outfile)
+
 
 def clean_up_files(bids_dir, subject_label, session=None):
     """
