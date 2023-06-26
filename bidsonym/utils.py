@@ -1,6 +1,6 @@
 import os
-import sys
 import json
+import shutil
 import numpy as np
 from glob import glob
 import pandas as pd
@@ -11,7 +11,16 @@ from nipype import Function
 from nipype.interfaces import utility as niu
 from nipype.interfaces.fsl import BET
 
+from pybids import BIDSLayout
+
 from ._logs import logger
+
+def move_file(source_path, destination_path):
+    # Create necessary folders in the destination path
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+    # Move the file to the destination path
+    shutil.move(source_path, destination_path)
+
 
 def check_outpath(bids_dir, subject_label):
     """
@@ -31,36 +40,18 @@ def check_outpath(bids_dir, subject_label):
         os.makedirs(out_path)
 
 
-def copy_no_deid(bids_dir, subject_label, image_file):
-    """
-    Move original non-defaced images to sourcedata.
+def copy_no_deid(bids_dir, file):
+    # deid layout
+    layout = BIDSLayout(bids_dir)
+    # no deid layout
+    nodeid_path = os.path.join(bids_dir, "sourcedata", "bidsonym")
+    nodeid_layout =  BIDSLayout(nodeid_path)
 
-    Parameters
-    ----------
-    bids_dir : str
-        Path to BIDS root directory.
-    subject_label : str
-        Label of subject to move (without 'sub-').
-    image_file : str
-        Original non-defaced image.
-
-    Returns
-    -------
-    moved_img_path : str
-        Path to moved original non-defaced image.
-    """
-
-    path = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s" % subject_label)
-    outfile = image_file[image_file.rfind('/') + 1:]
-    if os.path.isdir(path) is True:
-        move(image_file, os.path.join(path, outfile))
-    else:
-        os.makedirs(path)
-        move(image_file, os.path.join(path, outfile))
-
-    moved_img_path = os.path.join(path, outfile)
-
-    return moved_img_path
+    source_path = file.path
+    nodeied_file_path = nodeid_layout.build_path(file.entities)
+    
+    move_file(source_path, nodeied_file_path)
+    return(nodeied_file_path)
 
 
 def check_meta_data(bids_dir, subject_label, prob_fields=None):
@@ -163,50 +154,32 @@ def del_meta_data(bids_dir, subject_label, fields_del):
     fields_del : list
         List of meta-data keys ('str') which value should be removed.
     """
-
-    path_task_meta = os.path.join(bids_dir, "sourcedata/bidsonym/")
-    path_sub_meta = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s" % subject_label)
-    list_task_meta_files = glob(os.path.join(bids_dir, '*json'))
-    list_sub_meta_files = glob(os.path.join(bids_dir, 'sub-' + subject_label, '**/*.json'), recursive=True)
-
-    list_meta_files = list_task_meta_files + list_sub_meta_files
-
-    for task_meta_data_file in list_task_meta_files:
-        task_out = task_meta_data_file[task_meta_data_file.rfind('/') +
-                                       1:]
-        move(task_meta_data_file, os.path.join(path_task_meta, task_out))
-    for sub_meta_data_file in list_sub_meta_files:
-        sub_out = sub_meta_data_file[sub_meta_data_file.rfind('/') +
-                                     1:]
-        move(sub_meta_data_file, os.path.join(path_sub_meta, sub_out))
-
-    list_task_meta_files_deid = glob(os.path.join(bids_dir, "sourcedata/bidsonym/", '*json'))
-    list_sub_meta_files_deid = glob(os.path.join(bids_dir, "sourcedata/bidsonym/",
-                                                 'sub-' + subject_label, '**/*.json'),
-                                    recursive=True)
-    list_meta_files_deid = list_task_meta_files_deid + list_sub_meta_files_deid
-
-    fields_del = fields_del
-
     logger.info('working on %s' % subject_label)
-    logger.info('found the following meta-data files:')
-    logger.info(*list_meta_files, sep='\n')
-    logger.info('the following fields will be deleted:')
-    logger.info(*fields_del, sep='\n')
 
-    list_meta_files.sort()
-    list_meta_files_deid.sort()
+    # deid layout
+    layout = BIDSLayout(bids_dir)
+    # no deid layout
+    nodeid_path = os.path.join(bids_dir, "sourcedata", "bidsonym")
+    nodeid_layout =  BIDSLayout(nodeid_path)
 
-    for meta_file_deid, meta_file in zip(list_meta_files_deid, list_meta_files):
-        with open(meta_file_deid, 'r') as json_file:
+    json_files = layout.get(subject=subject_label, suffix='json')
+    edited_files = list()
+    for file in json_files:
+        file_path = file.path
+        edited = False
+        with open(file_path, 'r') as json_file:
             meta_data = json.load(json_file)
             for field in fields_del:
                 if field in meta_data:
                     meta_data[field] = 'deleted_by_bidsonym'
-                else:
-                    continue
-        with open(meta_file, 'w') as json_output_file:
-            json.dump(meta_data, json_output_file, indent=4)
+                    edited = True
+        if edited:
+            logger.info("Editing file: %s" % file_path)
+            edited_files.append(file)
+            nodeied_file_path = nodeid_layout.build_path(file.entities)
+            move_file(file_path, nodeied_file_path)
+            with open(file_path, 'w') as json_output_file:
+                json.dump(meta_data, json_output_file, indent=4)
 
 
 def rename_non_deid(bids_dir, subject_label):
@@ -444,7 +417,6 @@ def deface_t2w(image, warped_mask, outfile):
     outfile: str
         Name of the defaced file.
     """
-
     from nibabel import load, Nifti1Image
     from nilearn.image import math_img
 
@@ -462,7 +434,6 @@ def deface_t2w(image, warped_mask, outfile):
     masked_brain = Nifti1Image(outdata, infile_img.get_affine(),
                                infile_img.get_header())
     masked_brain.to_filename(outfile)
-
 
 def clean_up_files(bids_dir, subject_label, session=None):
     """

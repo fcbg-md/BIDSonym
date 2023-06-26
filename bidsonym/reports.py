@@ -160,7 +160,6 @@ def create_graphics(bids_dir, subject_label, session=None, t2w=None):
     gf_defaced = pe.Node(Function(input_names=['bids_dir', 'subject_label', 'session', 't2w'],
                                   function=gif_defaced),
                          name='gf_defaced')
-
     report_wf.connect([(inputnode, plt_defaced, [('bids_dir', 'bids_dir'),
                                                  ('subject_label', 'subject_label')]),
                        (inputnode, gf_defaced, [('bids_dir', 'bids_dir'),
