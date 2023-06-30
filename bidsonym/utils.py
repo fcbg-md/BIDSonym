@@ -25,59 +25,17 @@ def move_file(source_path, destination_path):
 def copy_no_deid(bids_dir, file):
     # no deid layout
     nodeid_path = os.path.join(bids_dir, "sourcedata", "bidsonym")
-    nodeid_layout =  BIDSLayout(nodeid_path)
-
+    nodeid_layout =  BIDSLayout(nodeid_path, validate=False)
     source_path = file.path
+    # Build new path
     nodeied_file_path = nodeid_layout.build_path(file.entities)
-    
+    # Move file
     move_file(source_path, nodeied_file_path)
     return(nodeied_file_path)
 
 
-def check_meta_data(bids_dir, subject_label, prob_fields=None):
-    """
-    Extract meta-data from image headers and json files and
-    subsequently evaluate values based on default keys or
-    user specified keys. Outputs are csv files containing
-    DataFrames with keys, values and markers concerning values.
-
-    Parameters
-    ----------
-    bids_dir : str
-        Path to BIDS root directory.
-    subject_label : str
-        Label of subject to be checked (without 'sub-').
-    prob_fields : list, optional
-        List of meta-data keys ('str') that should be evaluated.
-    """
-
-    list_subject_image_files = glob(os.path.join(bids_dir, 'sub-' + subject_label, '**/*.nii.gz'), recursive=True)
-    list_task_meta_files = glob(os.path.join(bids_dir, '*json'))
-    list_sub_meta_files = glob(os.path.join(bids_dir, 'sub-' + subject_label, '**/*.json'), recursive=True)
-    list_meta_files = list_task_meta_files + list_sub_meta_files
-
-    for subject_image_file in list_subject_image_files:
-
-        header = nib.load(subject_image_file).header
-        keys = []
-        dat = []
-
-        for key, data in zip(header.keys(), header.values()):
-            keys.append(key)
-            dat.append(data)
-        header_df = pd.DataFrame({'header_data_field': keys, 'data': dat, 'problematic': 'no'})
-
-        if prob_fields:
-            prob_fields = prob_fields + ['descrip']
         else:
             prob_fields = ['descrip']
-
-        for index, row in header_df.iterrows():
-            if any(i.lower() in row['header_data_field'] for i in prob_fields):
-                row['problematic'] = 'maybe'
-            else:
-                row['problematic'] = 'no'
-
         header_df.to_csv(os.path.join(bids_dir, 'sourcedata/bidsonym',
                                       'sub-%s' % subject_label,
                                       subject_image_file[subject_image_file.rfind('/') +
@@ -87,39 +45,6 @@ def check_meta_data(bids_dir, subject_label, prob_fields=None):
 
     logger.info('the following meta-data files will be checked:')
     logger.info(*list_meta_files, sep='\n')
-
-    for meta_file in list_meta_files:
-
-        with open(meta_file, 'r') as json_file:
-            meta_data = json.load(json_file)
-            keys = []
-            info = []
-            for key, inf in zip(meta_data.keys(), meta_data.values()):
-                keys.append(key)
-                info.append(inf)
-            json_df = pd.DataFrame({'meta_data_field': keys, 'information': info, 'problematic': 'no'})
-
-        list_general_prob_fields = ['AcquisitionTime', 'InstitutionAddress', 'InstitutionName',
-                                    'InstitutionalDepartmentName', 'ProcedureStepDescription', 'ProtocolName',
-                                    'PulseSequenceDetails', 'SeriesDescription', 'global']
-
-        if prob_fields:
-            prob_fields = prob_fields + list_general_prob_fields
-        else:
-            prob_fields = list_general_prob_fields
-
-        for index, row in json_df.iterrows():
-            if any(i in row['meta_data_field'] for i in prob_fields):
-                row['problematic'] = 'maybe'
-            else:
-                row['problematic'] = 'no'
-
-        json_df.to_csv(os.path.join(bids_dir, 'sourcedata/bidsonym', 'sub-%s' % subject_label,
-                                    meta_file[meta_file.rfind('/') +
-                                              1:meta_file.rfind('.json')] +
-                                    '_desc-jsoninfo.csv'),
-                       index=False)
-
 
 def del_meta_data(bids_dir, subject_label, fields_del):
     """
@@ -137,10 +62,10 @@ def del_meta_data(bids_dir, subject_label, fields_del):
     logger.info('working on %s' % subject_label)
 
     # deid layout
-    layout = BIDSLayout(bids_dir)
+    layout = BIDSLayout(bids_dir, validate=False)
     # no deid layout
     nodeid_path = os.path.join(bids_dir, "sourcedata", "bidsonym")
-    nodeid_layout =  BIDSLayout(nodeid_path)
+    nodeid_layout =  BIDSLayout(nodeid_path, validate=False)
 
     json_files = layout.get(subject=subject_label, suffix='json')
     edited_files = list()
@@ -156,39 +81,13 @@ def del_meta_data(bids_dir, subject_label, fields_del):
         if edited:
             logger.info("Editing file: %s" % file_path)
             edited_files.append(file)
-            nodeied_file_path = nodeid_layout.build_path(file.entities)
+            # Build new path
+            entities = file.entities
+            entities['desc'] = 'nondeid'
+            nodeied_file_path = nodeid_layout.build_path(entities)
             move_file(file_path, nodeied_file_path)
             with open(file_path, 'w') as json_output_file:
                 json.dump(meta_data, json_output_file, indent=4)
-
-
-def rename_non_deid(bids_dir, subject_label):
-    """
-    Rename orginal non-defaced images and meta-data json files
-    to add respective identifier ('desc-nondeid').
-
-    Parameters
-    ----------
-    bids_dir : str
-        Path to BIDS root directory.
-    subject_label : str
-        Label of subject to be renamed (without 'sub-').
-    """
-
-    list_meta_files = [fn for fn in glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-'
-                       + subject_label, '*json')) if not os.path.basename(fn).endswith('desc-nondeid.json')]
-    list_images_files = [fn for fn in glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-'
-                         + subject_label, '*nii.gz')) if not os.path.basename(fn).endswith('desc-nondeid.nii.gz')]
-
-    for meta_data_file in list_meta_files:
-        meta_deid = meta_data_file[meta_data_file.rfind('/') +
-                                   1:meta_data_file.rfind('.json')] + '_desc-nondeid.json'
-        os.rename(meta_data_file, os.path.join(bids_dir, 'sourcedata/bidsonym/sub-' + subject_label, meta_deid))
-
-    for image_file in list_images_files:
-        image_deid = image_file[image_file.rfind('/') +
-                                1:image_file.rfind('.nii.gz')] + '_desc-nondeid.nii.gz'
-        os.rename(image_file, os.path.join(bids_dir, 'sourcedata/bidsonym/sub-' + subject_label, image_deid))
 
 
 def brain_extraction_nb(image, subject_label, bids_dir):
@@ -219,6 +118,7 @@ def brain_extraction_nb(image, subject_label, bids_dir):
            outfile,
            ]
     check_call(cmd)
+    return(outfile)
 
 
 def run_brain_extraction_nb(image, subject_label, bids_dir):
@@ -269,6 +169,8 @@ def run_brain_extraction_bet(image, frac, subject_label, bids_dir):
 
     outfile = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s" % subject_label,
                            image[image.rfind('/')+1:image.rfind('.nii')] + '_brainmask_desc-nondeid.nii.gz')
+    dir_name = os.path.dirname(outfile)
+    os.makedirs(dir_name, exist_ok=True)
 
     brainextraction_wf = pe.Workflow('brainextraction_wf')
     inputnode = pe.Node(niu.IdentityInterface(['in_file']),
@@ -281,106 +183,7 @@ def run_brain_extraction_bet(image, frac, subject_label, bids_dir):
     bet.inputs.frac = float(frac)
     bet.inputs.out_file = outfile
     brainextraction_wf.run()
-
-
-def validate_input_dir(exec_env, bids_dir, participant_label):
-    """
-    Validate BIDS directory and structure via the BIDS-validator.
-    Functionality copied from fmriprep.
-
-    Parameters
-    ----------
-    exec_env : str
-        Environment BIDSonym is run in.
-    bids_dir : str
-        Path to BIDS root directory.
-    participant_label: str
-        Label(s) of subject to be checked (without 'sub-').
-    """
-
-    import tempfile
-    import subprocess
-    validator_config_dict = {
-        "ignore": [
-            "EVENTS_COLUMN_ONSET",
-            "EVENTS_COLUMN_DURATION",
-            "TSV_EQUAL_ROWS",
-            "TSV_EMPTY_CELL",
-            "TSV_IMPROPER_NA",
-            "VOLUME_COUNT_MISMATCH",
-            "BVAL_MULTIPLE_ROWS",
-            "BVEC_NUMBER_ROWS",
-            "DWI_MISSING_BVAL",
-            "INCONSISTENT_SUBJECTS",
-            "INCONSISTENT_PARAMETERS",
-            "BVEC_ROW_LENGTH",
-            "B_FILE",
-            "PARTICIPANT_ID_COLUMN",
-            "PARTICIPANT_ID_MISMATCH",
-            "TASK_NAME_MUST_DEFINE",
-            "PHENOTYPE_SUBJECTS_MISSING",
-            "STIMULUS_FILE_MISSING",
-            "DWI_MISSING_BVEC",
-            "EVENTS_TSV_MISSING",
-            "TSV_IMPROPER_NA",
-            "ACQTIME_FMT",
-            "Participants age 89 or higher",
-            "DATASET_DESCRIPTION_JSON_MISSING",
-            "FILENAME_COLUMN",
-            "WRONG_NEW_LINE",
-            "MISSING_TSV_COLUMN_CHANNELS",
-            "MISSING_TSV_COLUMN_IEEG_CHANNELS",
-            "MISSING_TSV_COLUMN_IEEG_ELECTRODES",
-            "UNUSED_STIMULUS",
-            "CHANNELS_COLUMN_SFREQ",
-            "CHANNELS_COLUMN_LOWCUT",
-            "CHANNELS_COLUMN_HIGHCUT",
-            "CHANNELS_COLUMN_NOTCH",
-            "CUSTOM_COLUMN_WITHOUT_DESCRIPTION",
-            "ACQTIME_FMT",
-            "SUSPICIOUSLY_LONG_EVENT_DESIGN",
-            "SUSPICIOUSLY_SHORT_EVENT_DESIGN",
-            "MALFORMED_BVEC",
-            "MALFORMED_BVAL",
-            "MISSING_TSV_COLUMN_EEG_ELECTRODES",
-            "MISSING_SESSION"
-        ],
-        "error": ["NO_T1W"],
-        "ignoredFiles": ['/dataset_description.json', '/participants.tsv']
-    }
-    # Limit validation only to data from requested participants
-    if participant_label:
-        all_subs = set([s.name[4:] for s in bids_dir.glob('sub-*')])
-        selected_subs = set([s[4:] if s.startswith('sub-') else s
-                             for s in participant_label])
-        bad_labels = selected_subs.difference(all_subs)
-        if bad_labels:
-            error_msg = 'Data for requested participant(s) label(s) not found. Could ' \
-                        'not find data for participant(s): %s. Please verify the requested ' \
-                        'participant labels.'
-            if exec_env == 'docker':
-                error_msg += ' This error can be caused by the input data not being ' \
-                             'accessible inside the docker container. Please make sure all ' \
-                             'volumes are mounted properly (see https://docs.docker.com/' \
-                             'engine/reference/commandline/run/#mount-volume--v---read-only)'
-            if exec_env == 'singularity':
-                error_msg += ' This error can be caused by the input data not being ' \
-                             'accessible inside the singularity container. Please make sure ' \
-                             'all paths are mapped properly (see https://www.sylabs.io/' \
-                             'guides/3.0/user-guide/bind_paths_and_mounts.html)'
-            raise RuntimeError(error_msg % ','.join(bad_labels))
-
-        ignored_subs = all_subs.difference(selected_subs)
-        if ignored_subs:
-            for sub in ignored_subs:
-                validator_config_dict["ignoredFiles"].append("/sub-%s/**" % sub)
-    with tempfile.NamedTemporaryFile('w+') as temp:
-        temp.write(json.dumps(validator_config_dict))
-        temp.flush()
-        try:
-            subprocess.check_call(['bids-validator', bids_dir, '-c', temp.name])
-        except FileNotFoundError:
-            raise FileNotFoundError("bids-validator does not appear to be installed.")
+    return(outfile)
 
 
 def deface_t2w(image, warped_mask, outfile):
@@ -414,59 +217,3 @@ def deface_t2w(image, warped_mask, outfile):
     masked_brain = Nifti1Image(outdata, infile_img.get_affine(),
                                infile_img.get_header())
     masked_brain.to_filename(outfile)
-
-
-def clean_up_files(bids_dir, subject_label, session=None):
-    """
-    Restructure BIDSonym outcomes following BIDS conventions.
-
-    Parameters
-    ----------
-    bids_dir : str
-        Path to BIDS root directory.
-    subject_label : str
-        Label of subject to move (without 'sub-').
-    session : str, optional
-        If multiple sessions exist, create session specific
-        structure.
-    """
-
-    if session is not None:
-        out_path_images = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s/ses-%s/images"
-                                       % (subject_label, session))
-        out_path_info = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s/ses-%s/meta_data_info"
-                                     % (subject_label, session))
-        list_imaging_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
-                                               'sub-' + subject_label + '_ses-' + session + '*.nii.gz'))
-        list_graphics = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
-                                          'sub-' + subject_label + '_ses-' + session + '*.png'))
-        list_gifs = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
-                                      'sub-' + subject_label + '_ses-' + session + '*.gif'))
-        list_info_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
-                                            'sub-' + subject_label + '_ses-' + session + '*.csv'))
-        list_meta_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label,
-                                            'sub-' + subject_label + '_ses-' + session + '*.json'))
-    else:
-        out_path_images = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s/images" % subject_label)
-        out_path_info = os.path.join(bids_dir, "sourcedata/bidsonym/sub-%s/meta_data_info" % subject_label)
-        list_imaging_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label, '*.nii.gz'))
-        list_graphics = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label, '*.png'))
-        list_gifs = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label, '*.gif'))
-        list_info_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label, '*.csv'))
-        list_meta_files = glob(os.path.join(bids_dir, 'sourcedata/bidsonym/sub-%s' % subject_label, '*.json'))
-
-    if os.path.isdir(out_path_images) is False:
-        os.makedirs(out_path_images)
-
-    if os.path.isdir(out_path_info) is False:
-        os.makedirs(out_path_info)
-
-    images = list_imaging_files + list_graphics + list_gifs
-
-    for image_file in images:
-        file_out = image_file[image_file.rfind('/') + 1:]
-        move(image_file, os.path.join(out_path_images, file_out))
-
-    for info_file in list_info_files+list_meta_files:
-        file_out = info_file[info_file.rfind('/') + 1:]
-        move(info_file, os.path.join(out_path_info, file_out))

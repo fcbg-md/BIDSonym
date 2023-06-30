@@ -50,7 +50,7 @@ def run_pydeface(image, outfile):
     inputnode.inputs.in_file = image
     pydeface.inputs.outfile = outfile
     deface_wf.run()
-
+    return(outfile)
 
 def mri_deface_cmd(image, outfile):
     """
@@ -99,6 +99,7 @@ def run_mri_deface(image, outfile):
     inputnode.inputs.in_file = image
     mri_deface.inputs.outfile = outfile
     deface_wf.run()
+    return(outfile)
 
 
 def run_quickshear(image, outfile):
@@ -126,6 +127,7 @@ def run_quickshear(image, outfile):
     inputnode.inputs.in_file = image
     quickshear.inputs.out_file = outfile
     deface_wf.run()
+    return(outfile)
 
 
 def mridefacer_cmd(image, T1_file):
@@ -176,6 +178,7 @@ def run_mridefacer(image, T1_file):
     inputnode.inputs.in_file = image
     mridefacer.inputs.T1_file = T1_file
     deface_wf.run()
+    return(image)
 
 
 def deepdefacer_cmd(image, subject_label, bids_dir):
@@ -231,6 +234,8 @@ def run_deepdefacer(image, subject_label, bids_dir):
     deepdefacer.inputs.subject_label = subject_label
     deepdefacer.inputs.bids_dir = bids_dir
     deface_wf.run()
+    return(image)
+
 
 
 def run_t2w_deface(image, t1w_deface_mask, outfile):
@@ -267,3 +272,4 @@ def run_t2w_deface(image, t1w_deface_mask, outfile):
     flirtnode.inputs.in_file = t1w_deface_mask
     deface_t2w.inputs.outfile = outfile
     deface_wf.run()
+    return(outfile)

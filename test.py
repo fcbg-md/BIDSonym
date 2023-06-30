@@ -47,11 +47,13 @@ if build:
 
 # docker run -v C:\Users\victor.ferat\Documents\DATA\ds004590:/input test --participant_label 01 --deid pydeface --deface_t2w --brainextraction nobrainer /input group
 arguments = []
-for deid in ['pydeface', 'mri_deface', 'quickshear', 'mridefacer', 'deepdefacer']:
-    argument = ['--participant_label', '01', '--deid', deid, '--deface_t2w', '--brainextraction', 'nobrainer', '/input', 'group']
+
+# deepdefacer -> nibabel.deprecator.ExpiredDeprecationError: get_data() is deprecated in favor of get_fdata()
+for deid in ['pydeface', 'mri_deface', 'quickshear', 'mridefacer']: 
+    argument = ['--participant_label', '01', '--deid', deid, '--deface_t2w', '--brainextraction', 'nobrainer', '/input', 'participant', '--verbose', 'DEBUG']
     arguments.append(argument)
 
-source_folder = r"C:\Users\victor.ferat\Documents\DATA\ds004590"
+source_folder = r"C:\Users\victor.ferat\Documents\DATA\ds004590_minimal"
 for argument in arguments:
     # Create a temporary directory
     temp_dir = tempfile.mkdtemp()
@@ -68,4 +70,3 @@ for argument in arguments:
     # Run container
     exit_code, logs = run_container(image_tag, volumes=volumes, arguments=argument)
     print (argument, exit_code, logs)
-    os.remove(temp_dir)
