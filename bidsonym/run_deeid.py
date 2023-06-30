@@ -30,10 +30,10 @@ def run_deeid(
     analysis_level,
     participant_label,
     deid,
-    deface_t2w,
     del_meta,
     brainextraction,
     bet_frac,
+    deface_t2w=True,
     skip_bids_validation=False,
     exec_env="local",
     verbose=None,
@@ -187,7 +187,7 @@ def get_parser():
     parser.add_argument(
         "--deface_t2w",
         action="store_true",
-        default=False,
+        default=True,
         help="Deface T2w images by using defaced T1w image as deface-mask.",
     )
     parser.add_argument(
