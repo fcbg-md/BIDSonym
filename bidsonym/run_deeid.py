@@ -144,6 +144,7 @@ def run_deeid(
                     defaced_t2 = run_t2w_deface(source_t2w, T1_file, T2_file)
                     T2_overlay = plot_overlay(brainmask, defaced_t2)
                     T2_gif = nifti_to_gif(defaced_t2)
+                    # TODO: move files
 
 
 def get_parser():
