@@ -7,7 +7,6 @@ import json
 
 client = docker.from_env()
 
-
 def run_container(image, arguments, volumes):
     print(f"Running {image}")
     container = client.containers.run(

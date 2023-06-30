@@ -34,18 +34,6 @@ def copy_no_deid(bids_dir, file):
     return(nodeied_file_path)
 
 
-        else:
-            prob_fields = ['descrip']
-        header_df.to_csv(os.path.join(bids_dir, 'sourcedata/bidsonym',
-                                      'sub-%s' % subject_label,
-                                      subject_image_file[subject_image_file.rfind('/') +
-                                                         1:subject_image_file.rfind('.nii.gz')] +
-                                      '_desc-headerinfo.csv'),
-                         index=False)
-
-    logger.info('the following meta-data files will be checked:')
-    logger.info(*list_meta_files, sep='\n')
-
 def del_meta_data(bids_dir, subject_label, fields_del):
     """
     Delete values from specified keys in meta-data json files.
@@ -83,7 +71,6 @@ def del_meta_data(bids_dir, subject_label, fields_del):
             edited_files.append(file)
             # Build new path
             entities = file.entities
-            entities['desc'] = 'nondeid'
             nodeied_file_path = nodeid_layout.build_path(entities)
             move_file(file_path, nodeied_file_path)
             with open(file_path, 'w') as json_output_file:

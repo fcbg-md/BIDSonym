@@ -103,7 +103,7 @@ def run_deeid(
             source_t1w = copy_no_deid(bids_dir, t1w)
             # Delete metadata
 
-            # Deface source_t1w and save it as T1_file
+            # Deface source_t1w and save it as T1_file (=defaced_t1)
             if deid == "pydeface":
                 defaced_t1 = run_pydeface(source_t1w, T1_file)
             elif deid == "mri_deface":
@@ -131,7 +131,6 @@ def run_deeid(
                 else:
                     t2w = t2w[0]
                     T2_file = t2w.path
-                    # deface T2w
                     logger.info("Processing T2w image %s" % T2_file)
                     if brainextraction == "bet":
                         run_brain_extraction_bet(
@@ -141,7 +140,8 @@ def run_deeid(
                         run_brain_extraction_nb(T2_file, subject_label, bids_dir)
 
                     source_t2w = copy_no_deid(bids_dir, T2_file)
-                    defaced_t2 = run_t2w_deface(source_t2w, T1_file, T2_file)
+                    # Deface source_t2w and save it as T2_file (=defaced_t2)
+                    defaced_t2 = run_t2w_deface(source_t2w, defaced_t1, T2_file)
                     T2_overlay = plot_overlay(brainmask, defaced_t2)
                     T2_gif = nifti_to_gif(defaced_t2)
                     # TODO: move files
