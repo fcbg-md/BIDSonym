@@ -1,7 +1,8 @@
 """Utility functions for checking types and values. Inspired from MNE."""
-
 import logging
 import operator
+import os
+from pathlib import Path
 from typing import Any
 
 
@@ -31,11 +32,10 @@ def _ensure_int(item, item_name=None):
         item = int(operator.index(item))
     except TypeError:
         item_name = "Item" if item_name is None else "'%s'" % item_name
-        raise TypeError(
-            "%s must be an int, got %s instead." % (item_name, type(item))
-        )
+        raise TypeError("%s must be an int, got %s instead." % (item_name, type(item)))
 
     return item
+
 
 class _IntLike:
     @classmethod
@@ -46,8 +46,11 @@ class _IntLike:
             return False
         else:
             return True
-        
-_types = {"int": (_IntLike(),),}
+
+
+_types = {
+    "int": (_IntLike(),),
+}
 
 
 def _check_type(item, types, item_name=None):
@@ -148,12 +151,11 @@ def _check_value(item, allowed_values, item_name=None, extra=None):
             options += ", ".join([f"{repr(v)}" for v in allowed_values[:-1]])
             options += f", and {repr(allowed_values[-1])}"
         raise ValueError(
-            msg.format(
-                item_name=item_name, extra=extra, options=options, item=item
-            )
+            msg.format(item_name=item_name, extra=extra, options=options, item=item)
         )
 
     return item
+
 
 def _check_verbose(verbose: Any) -> int:
     """Check that the value of verbose is valid.
@@ -197,3 +199,14 @@ def _check_verbose(verbose: Any) -> int:
             )
 
     return verbose
+
+
+def _check_environment():
+    if os.getenv("IS_DOCKER"):
+        exec_env = "singularity"
+        cgroup = Path("/proc/1/cgroup")
+        if cgroup.exists() and "docker" in cgroup.read_text():
+            exec_env = "docker"
+    else:
+        exec_env = "local"
+    return exec_env

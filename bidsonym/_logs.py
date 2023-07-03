@@ -1,10 +1,11 @@
-import os
 import logging
+import os
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Optional, Union
 
 from ._checks import _check_verbose
+
 
 def _init_logger(*, verbose: Optional[Union[bool, str, int]] = None) -> logging.Logger:
     """Initialize a logger.
