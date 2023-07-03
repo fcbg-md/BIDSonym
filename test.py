@@ -102,9 +102,13 @@ for argument in arguments:
     print("Temporary directory:", temp_bids)
     # Copy the source folder to the destination folder
     shutil.copytree(
-        source_folder, temp_bids, ignore=shutil.ignore_patterns(".git*", ".datalad*")
+        source_folder,
+        temp_bids,
+        ignore=shutil.ignore_patterns(".git*", ".datalad*"),
     )
     volumes = {temp_bids: {"bind": "/input", "mode": "rw"}}
     # Run container
-    exit_code, logs = run_container(image_tag, volumes=volumes, arguments=argument)
+    exit_code, logs = run_container(
+        image_tag, volumes=volumes, arguments=argument
+    )
     print(argument, exit_code, logs)

@@ -25,7 +25,7 @@ def copy_no_deid(bids_dir, file, relpath="sourcedata/bidsonym"):
     file : BIDSFile
         File to copy.
     relpath : str
-        Relative path to copy file to.
+        Relative path of the derivatives BIDS directory.
     """
     # no deid layout
     nodeid_path = os.path.join(bids_dir, relpath)
@@ -81,3 +81,42 @@ def del_meta_data(bids_dir, subject_label, fields_del):
             move_file(file_path, nodeied_file_path)
             with open(file_path, "w") as json_output_file:
                 json.dump(meta_data, json_output_file, indent=4)
+
+
+def deface_t2w(in_file, warped_mask, out_file):
+    """
+    Deface T2w image using the defaced T1w image as
+    deface mask.
+
+    Parameters
+    ----------
+    image : str
+        Path to image.
+    warped_mask : str
+        Path to warped defaced T1w image.
+    outfile: str
+        Name of the defaced file.
+    """
+    import numpy as np
+    from nibabel import Nifti1Image, load
+    from nilearn.image import math_img
+
+    # functionality copied from pydeface
+    infile_img = load(in_file)
+    warped_mask_img = load(warped_mask)
+    warped_mask_img = math_img("img > 0", img=warped_mask_img)
+    try:
+        outdata = infile_img.get_fdata().squeeze()
+        outdata *= warped_mask_img.get_fdata()
+    except ValueError:
+        tmpdata = np.stack(
+            [warped_mask_img.get_fdata()] * infile_img.get_fdata().shape[-1],
+            axis=-1,
+        )
+        outdata = infile_img.fget_data() * tmpdata
+
+    masked_brain = Nifti1Image(
+        outdata, infile_img.affine, infile_img.header
+    )
+    masked_brain.to_filename(out_file)
+    return out_file

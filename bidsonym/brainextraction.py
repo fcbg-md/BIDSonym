@@ -21,7 +21,7 @@ def brain_extraction_nb(infile, outfile):
     cmd = [
         "nobrainer",
         "predict",
-        "--model=/opt/nobrainer/models/trained-models/neuronets/brainy/0.1.0/weights/brain-extraction-unet-128iso-model.h5",
+        "--model=/opt/nobrainer/models/trained-models/neuronets/brainy/0.1.0/weights/brain-extraction-unet-128iso-model.h5",  # noqa
         "--verbose",
         infile,
         outfile,

@@ -7,7 +7,7 @@ from nipype.interfaces.fsl import BET, FLIRT
 from nipype.interfaces.quickshear import Quickshear
 
 
-def pydeface_cmd(image, outfile):
+def pydeface_cmd(in_file, out_file):
     """
     Setup pydeface command.
 
@@ -23,16 +23,16 @@ def pydeface_cmd(image, outfile):
 
     cmd = [
         "pydeface",
-        image,
+        in_file,
         "--out",
-        outfile,
+        out_file,
         "--force",
     ]
     check_call(cmd)
-    return
+    return out_file
 
 
-def run_pydeface(image, outfile):
+def run_pydeface(in_file, out_file):
     """
     Setup and run pydeface workflow.
 
@@ -43,25 +43,22 @@ def run_pydeface(image, outfile):
     outfile : str
         Name of the defaced file.
     """
-
-    deface_wf = pe.Workflow("deface_wf")
-    inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
     pydeface = pe.Node(
         Function(
-            input_names=["image", "outfile"],
-            output_names=["outfile"],
+            input_names=["in_file", "out_file"],
+            output_names=["out_file"],
             function=pydeface_cmd,
         ),
         name="pydeface",
     )
-    deface_wf.connect([(inputnode, pydeface, [("in_file", "image")])])
-    inputnode.inputs.in_file = image
-    pydeface.inputs.outfile = outfile
-    deface_wf.run()
-    return outfile
+    pydeface.inputs.in_file = in_file
+    pydeface.inputs.out_file = out_file
+    results = pydeface.run()
+    out_file = results.outputs.out_file
+    return out_file
 
 
-def mri_deface_cmd(image, outfile):
+def mri_deface_cmd(in_file, out_file):
     """
     Setup mri_deface command.
 
@@ -72,21 +69,20 @@ def mri_deface_cmd(image, outfile):
     outfile : str
         Name of the defaced file.
     """
-
     from subprocess import check_call
 
     cmd = [
         "/home/bm/bidsonym/fs_data/mri_deface",
-        image,
+        in_file,
         "/home/bm/bidsonym/fs_data/talairach_mixed_with_skull.gca",
         "/home/bm/bidsonym/fs_data/face.gca",
-        outfile,
+        out_file,
     ]
     check_call(cmd)
-    return
+    return out_file
 
 
-def run_mri_deface(image, outfile):
+def run_mri_deface(in_file, out_file):
     """
     Setup and run mri_deface workflow.
 
@@ -97,25 +93,23 @@ def run_mri_deface(image, outfile):
     outfile : str
         Name of the defaced file.
     """
-
-    deface_wf = pe.Workflow("deface_wf")
-    inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
     mri_deface = pe.Node(
         Function(
-            input_names=["image", "outfile"],
-            output_names=["outfile"],
+            input_names=["in_file", "out_file"],
+            output_names=["out_file"],
             function=mri_deface_cmd,
         ),
         name="mri_deface",
     )
-    deface_wf.connect([(inputnode, mri_deface, [("in_file", "image")])])
-    inputnode.inputs.in_file = image
-    mri_deface.inputs.outfile = outfile
-    deface_wf.run()
-    return outfile
+    mri_deface.inputs.in_file = in_file
+    mri_deface.inputs.out_file = out_file
+    results = mri_deface.run()
+    out_file = results.outputs.out_file
+    return out_file
 
 
-def run_quickshear(image, outfile):
+def run_quickshear(in_file, out_file):
     """
     Setup and run quickshear workflow.
 
@@ -126,6 +120,7 @@ def run_quickshear(image, outfile):
     outfile : str
         Name of the defaced file.
     """
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     deface_wf = pe.Workflow("deface_wf")
     inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
@@ -138,13 +133,14 @@ def run_quickshear(image, outfile):
             (bet, quickshear, [("mask_file", "mask_file")]),
         ]
     )
-    inputnode.inputs.in_file = image
-    quickshear.inputs.out_file = outfile
-    deface_wf.run()
-    return outfile
+    inputnode.inputs.in_file = in_file
+    quickshear.inputs.out_file = out_file
+    results = deface_wf.run()
+    out_file = results.outputs.quickshear.out_file
+    return out_file
 
 
-def mridefacer_cmd(image, outfile):
+def mridefacer_cmd(in_file, out_dir):
     """
     Setup mridefacer command.
 
@@ -157,14 +153,13 @@ def mridefacer_cmd(image, outfile):
     """
     from subprocess import check_call
 
-    outdir = outfile[: outfile.rfind("/")]
-
-    cmd = ["/mridefacer/mridefacer", "--apply", image, "--outdir", outdir]
+    cmd = ["/mridefacer/mridefacer", "--apply", in_file, "--outdir", out_dir]
     check_call(cmd)
-    return
+    out_file = os.path.join(out_dir, os.path.basename(in_file))
+    return out_file
 
 
-def run_mridefacer(image, outfile):
+def run_mridefacer(in_file, out_dir):
     """
     Setup and mridefacer workflow.
 
@@ -175,24 +170,23 @@ def run_mridefacer(image, outfile):
     outfile : str
         Name of the defaced file.
     """
-    deface_wf = pe.Workflow("deface_wf")
-    inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
+    os.makedirs(os.path.dirname(out_dir), exist_ok=True)
     mridefacer = pe.Node(
         Function(
-            input_names=["image", "T1_file"],
-            output_names=["outfile"],
+            input_names=["in_file", "out_dir"],
+            output_names=["out_file"],
             function=mridefacer_cmd,
         ),
         name="mridefacer",
     )
-    deface_wf.connect([(inputnode, mridefacer, [("in_file", "image")])])
-    inputnode.inputs.in_file = image
-    mridefacer.inputs.T1_file = outfile
-    deface_wf.run()
-    return image
+    mridefacer.inputs.in_file = in_file
+    mridefacer.inputs.out_dir = out_dir
+    results = mridefacer.run()
+    out_file = results.outputs.out_file
+    return out_file
 
 
-def deepdefacer_cmd(image, output, maskfile):
+def deepdefacer_cmd(in_file, out_file, maskfile):
     """
     Setup deepdefacer command.
 
@@ -210,17 +204,17 @@ def deepdefacer_cmd(image, output, maskfile):
     cmd = [
         "deepdefacer",
         "--input_file",
-        image,
+        in_file,
         "--defaced_output_path",
-        output,
+        out_file,
         "--mask_output_path",
         maskfile,
     ]
     check_call(cmd)
-    return output
+    return out_file
 
 
-def run_deepdefacer(image, output):
+def run_deepdefacer(in_file, out_file):
     """
     Setup and run mridefacer workflow.
 
@@ -233,26 +227,28 @@ def run_deepdefacer(image, output):
     bids_dir : str
         Path to BIDS root directory.
     """
-    maskfile = os.path.splitext(image)[0]
+    maskfile = os.path.splitext(in_file)[0]
     while os.path.splitext(maskfile)[1]:
         maskfile = os.path.splitext(maskfile)[0]
     maskfile += "_space-native_defacemask-deepdefacer.nii.gz"
+
     deepdefacer = pe.Node(
         Function(
-            input_names=["image", "subject_label", "bids_dir"],
-            output_names=["outfile"],
+            input_names=["in_file", "out_file", "maskfile"],
+            output_names=["out_file"],
             function=deepdefacer_cmd,
         ),
         name="deepdefacer",
     )
-    deepdefacer.inputs.image = image
-    deepdefacer.inputs.output = output
+    deepdefacer.inputs.in_file = in_file
+    deepdefacer.inputs.out_file = out_file
     deepdefacer.inputs.maskfile = maskfile
-    deepdefacer.run()
-    return output
+    results = deepdefacer.run()
+    out_file = results.outputs.out_file
+    return out_file
 
 
-def run_t2w_deface(image, t1w_deface_mask, outfile):
+def run_t2w_deface(in_file, t1w_deface_mask, out_file):
     """
     Setup and run t2w defacing workflow.
 
@@ -276,8 +272,8 @@ def run_t2w_deface(image, t1w_deface_mask, outfile):
     )
     deface_t2w = pe.Node(
         Function(
-            input_names=["image", "warped_mask", "outfile"],
-            output_names=["outfile"],
+            input_names=["in_file", "warped_mask", "out_file"],
+            output_names=["out_file"],
             function=deface_t2w,
         ),
         name="deface_t2w",
@@ -285,12 +281,12 @@ def run_t2w_deface(image, t1w_deface_mask, outfile):
     deface_wf.connect(
         [
             (inputnode, flirtnode, [("in_file", "reference")]),
-            (inputnode, deface_t2w, [("in_file", "image")]),
+            (inputnode, deface_t2w, [("in_file", "in_file")]),
             (flirtnode, deface_t2w, [("out_file", "warped_mask")]),
         ]
     )
-    inputnode.inputs.in_file = image
+    inputnode.inputs.in_file = in_file
     flirtnode.inputs.in_file = t1w_deface_mask
-    deface_t2w.inputs.outfile = outfile
+    deface_t2w.inputs.out_file = out_file
     deface_wf.run()
-    return outfile
+    return out_file

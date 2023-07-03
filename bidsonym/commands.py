@@ -1,9 +1,7 @@
 import argparse
-import os
 from pathlib import Path
 
 from . import __version__
-from ._checks import _check_environment
 from .deeid import deeid
 
 
@@ -37,7 +35,13 @@ def get_parser():
     parser.add_argument(
         "--deid",
         help="Approach to use for de-identifictation.",
-        choices=["pydeface", "mri_deface", "quickshear", "mridefacer", "deepdefacer"],
+        choices=[
+            "pydeface",
+            "mri_deface",
+            "quickshear",
+            "mridefacer",
+            "deepdefacer",
+        ],
     )
     parser.add_argument(
         "--deface_t2w",
@@ -47,8 +51,9 @@ def get_parser():
     )
     parser.add_argument(
         "--del_meta",
-        help="Indicate if and which information from the .json meta-data files should be deleted. \
-                        If so, the original .json files will be copied to sourcedata/",
+        help="Indicate if and which information from the .json meta-data \
+            files should be deleted. If so, the original .json files will \
+             be copied to sourcedata.",
         nargs="+",
     )
     parser.add_argument(
@@ -59,14 +64,15 @@ def get_parser():
     )
     parser.add_argument(
         "--bet_frac",
-        help="In case BET is used for pre-defacing brain extraction, provide a Frac value.",
+        help="In case BET is used for pre-defacing brain extraction, \
+        provide a Frac value.",
         nargs=1,
     )
     parser.add_argument(
         "--skip_bids_validation",
         default=False,
-        help="Assume the input dataset is BIDS compliant and skip the validation \
-                             (default: False).",
+        help="Assume the input dataset is BIDS compliant \
+              and skip the validation (default: False).",
         action="store_true",
     )
     parser.add_argument(
@@ -85,7 +91,6 @@ def get_parser():
 
 def main():
     # special variable set in the container
-    exec_env = _check_environment()
     args = get_parser().parse_args()
     deeid(
         bids_dir=args.bids_dir,
@@ -97,6 +102,5 @@ def main():
         brainextraction=args.brainextraction,
         bet_frac=args.bet_frac,
         skip_bids_validation=args.skip_bids_validation,
-        exec_env=exec_env,
         verbose=args.verbose,
     )

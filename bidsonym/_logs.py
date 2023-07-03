@@ -1,5 +1,4 @@
 import logging
-import os
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Optional, Union
@@ -7,7 +6,9 @@ from typing import Callable, Optional, Union
 from ._checks import _check_verbose
 
 
-def _init_logger(*, verbose: Optional[Union[bool, str, int]] = None) -> logging.Logger:
+def _init_logger(
+    *, verbose: Optional[Union[bool, str, int]] = None
+) -> logging.Logger:
     """Initialize a logger.
 
     Assigns sys.stdout as the first handler of the logger.
