@@ -43,6 +43,7 @@ def run_pydeface(in_file, out_file):
     outfile : str
         Name of the defaced file.
     """
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
     pydeface = pe.Node(
         Function(
             input_names=["in_file", "out_file"],
@@ -70,7 +71,6 @@ def mri_deface_cmd(in_file, out_file):
         Name of the defaced file.
     """
     from subprocess import check_call
-
     cmd = [
         "/home/bm/bidsonym/fs_data/mri_deface",
         in_file,
@@ -121,7 +121,6 @@ def run_quickshear(in_file, out_file):
         Name of the defaced file.
     """
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
-
     deface_wf = pe.Workflow("deface_wf")
     inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
     bet = pe.Node(BET(mask=True, frac=0.5), name="bet")
@@ -152,7 +151,6 @@ def mridefacer_cmd(in_file, out_dir):
         Name of the defaced file.
     """
     from subprocess import check_call
-
     cmd = ["/mridefacer/mridefacer", "--apply", in_file, "--outdir", out_dir]
     check_call(cmd)
     out_file = os.path.join(out_dir, os.path.basename(in_file))
@@ -200,7 +198,6 @@ def deepdefacer_cmd(in_file, out_file, maskfile):
         Name of the mask file.
     """
     from subprocess import check_call
-
     cmd = [
         "deepdefacer",
         "--input_file",
@@ -227,6 +224,8 @@ def run_deepdefacer(in_file, out_file):
     bids_dir : str
         Path to BIDS root directory.
     """
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+
     maskfile = os.path.splitext(in_file)[0]
     while os.path.splitext(maskfile)[1]:
         maskfile = os.path.splitext(maskfile)[0]
@@ -264,7 +263,8 @@ def run_t2w_deface(in_file, t1w_deface_mask, out_file):
     """
 
     from bidsonym.utils import deface_t2w
-
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    
     deface_wf = pe.Workflow("deface_wf")
     inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
     flirtnode = pe.Node(
