@@ -11,10 +11,10 @@ license = {file = 'LICENSE'}
 requires-python = '>=3.8'
 authors = [
     {name = 'Peer Herholz', email = 'herholz.peer@gmail.com'},
-    {name = 'Victor Férat', email = 'victor.ferat@unige.ch'},
+    {name = 'Victor Férat', email = 'victor.ferat@live.fr'},
 ]
 maintainers = [
-    {name = 'Victor Férat', email = 'victor.ferat@unige.ch'},
+    {name = 'Victor Férat', email = 'victor.ferat@live.fr'},
 ]
 keywords = [
     'python',

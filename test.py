@@ -55,24 +55,6 @@ for deid in ["pydeface", "mri_deface", "quickshear", "mridefacer"]:
         "--deid",
         deid,
         "--deface_t2w",
-        "--brainextraction",
-        "nobrainer",
-        "/input",
-        "participant",
-        "--verbose",
-        "DEBUG",
-    ]
-    arguments.append(argument)
-    argument = [
-        "--participant_label",
-        "02",
-        "--deid",
-        deid,
-        "--deface_t2w",
-        "--brainextraction",
-        "bet",
-        "--bet_frac",
-        "0.5",
         "/input",
         "participant",
         "--verbose",
@@ -81,19 +63,53 @@ for deid in ["pydeface", "mri_deface", "quickshear", "mridefacer"]:
     arguments.append(argument)
 
 
+# bet
 argument = [
-    "--pydeface",
-    deid,
+    "--participant_label",
+    "02",
+    "--deid",
+    "pydeface",
     "--deface_t2w",
     "--brainextraction",
-    "nobrainer",
+    "bet",
+    "--bet_frac",
+    "0.5",
     "/input",
-    "group",
+    "participant",
     "--verbose",
     "DEBUG",
 ]
 arguments.append(argument)
 
+# nobrainer
+argument = [
+    "--participant_label",
+    "02",
+    "--deid",
+    "pydeface",
+    "--deface_t2w",
+    "/input",
+    "participant",
+    "nobrainer",
+    "--verbose",
+    "DEBUG",
+]
+arguments.append(argument)
+
+# group
+argument = [
+    "--deid",
+    deid,
+    "--deface_t2w",
+    "--verbose",
+    "DEBUG",
+    "/input",
+    "group",
+]
+arguments.append(argument)
+
+
+results = list()
 source_folder = r"C:\Users\victor.ferat\Documents\DATA\ds004590_minimal"
 for argument in arguments:
     # Create a temporary directory
@@ -106,9 +122,12 @@ for argument in arguments:
         temp_bids,
         ignore=shutil.ignore_patterns(".git*", ".datalad*"),
     )
+    print(argument)
     volumes = {temp_bids: {"bind": "/input", "mode": "rw"}}
     # Run container
     exit_code, logs = run_container(
         image_tag, volumes=volumes, arguments=argument
     )
-    print(argument, exit_code, logs)
+    if exit_code['StatusCode'] != 0:
+        print(exit_code, logs)
+    results.append([argument, exit_code, logs])

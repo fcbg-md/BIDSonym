@@ -33,6 +33,8 @@ def deeid(
     verbose = _check_verbose(verbose)
     subjects_to_analyze = []
     # Check brainextraction
+    if brainextraction not in ["bet", "nobrainer", None]:
+        raise ValueError("If brainextraction is set, it should either be bet or nobrainer.")
     if brainextraction == "bet":
         if bet_frac is None:
             raise ValueError(
@@ -40,12 +42,10 @@ def deeid(
                 "please provide a Frac value. For example: --bet_frac 0.5"
             )
     if brainextraction is None:
-        raise Exception(
-            "For post defacing quality it is required to run a "
-            "form of brainextraction on the non-deindentified data."
-            "Thus please either indicate bet (--brainextration bet) "
-            "or nobrainer (--brainextraction nobrainer)."
-        )
+        logger.info("No post defacing report will be generated. \
+                    To generate a quality report, please set \
+                    brainextraction to either bet or nobrainer.")
+
     # Check subjects_to_analyze
     if analysis_level == "participant" and not participant_label:
         raise ValueError("No participant label indicated. Please do so.")
@@ -98,21 +98,6 @@ def deeid(
             logger.info("Processing T1w image %s" % t1w.relpath)
             source_t1w = copy_no_deid(bids_dir, t1w)
 
-            # Create brainmask
-            brainmask_path = os.path.splitext(source_t1w)[0]
-            while os.path.splitext(brainmask_path)[1]:
-                brainmask_path = os.path.splitext(brainmask_path)[0]
-            brainmask_path += "_brainmask.nii.gz"
-            logger.info("Extracting brainmask to %s" % brainmask_path)
-            if brainextraction == "bet":
-                brainmask_t1 = run_brain_extraction_bet(
-                    source_t1w, bet_frac[0], brainmask_path
-                )
-            elif brainextraction == "nobrainer":
-                brainmask_t1 = run_brain_extraction_nb(
-                    source_t1w, brainmask_path
-                )
-
             # Deface source_t1w and save it as T1_file (=defaced_t1)
             if deid == "pydeface":
                 defaced_t1 = run_pydeface(source_t1w, T1_file)
@@ -125,10 +110,28 @@ def deeid(
                 defaced_t1 = run_mridefacer(source_t1w, outdir)
             elif deid == "deepdefacer":
                 defaced_t1 = run_deepdefacer(source_t1w, T1_file)
-
-            # Create plots
-            T1_overlay = plot_overlay(brainmask_t1, defaced_t1)
             T1_gif = nifti_to_gif(defaced_t1)
+
+            # Create brainmask
+            if brainextraction is not None:
+                # generate brainmask path
+                brainmask_path = os.path.splitext(source_t1w)[0]
+                while os.path.splitext(brainmask_path)[1]:
+                    brainmask_path = os.path.splitext(brainmask_path)[0]
+                brainmask_path += "_brainmask.nii.gz"
+                # extract 
+                logger.info("Extracting brainmask to %s" % brainmask_path)
+                if brainextraction == "bet":
+                    brainmask_t1 = run_brain_extraction_bet(
+                        source_t1w, bet_frac[0], brainmask_path
+                    )
+                elif brainextraction == "nobrainer":
+                    brainmask_t1 = run_brain_extraction_nb(
+                        source_t1w, brainmask_path
+                    )
+                # Create plots
+                T1_overlay = plot_overlay(brainmask_t1, defaced_t1)
+
 
             # Process T2 files.
             if deface_t2w:
@@ -146,24 +149,23 @@ def deeid(
                     t2w = layout.get_file(T2_file)
                     source_t2w = copy_no_deid(bids_dir, t2w)
                     logger.info("Processing T2w image %s" % T2_file)
-                    # Create brainmask
-                    brainmask_path = os.path.splitext(source_t2w)[0]
-                    while os.path.splitext(brainmask_path)[1]:
-                        brainmask_path = os.path.splitext(brainmask_path)[0]
-                    brainmask_path += "_brainmask.nii.gz"
-                    if brainextraction == "bet":
-                        brainmask_t2 = run_brain_extraction_bet(
-                            source_t2w, bet_frac[0], brainmask_path
-                        )
-                    elif brainextraction == "nobrainer":
-                        brainmask_t2 = run_brain_extraction_nb(
-                            source_t2w, brainmask_path
-                        )
-
                     # Deface source_t2w and save it as T2_file (=defaced_t2)
                     defaced_t2 = run_t2w_deface(
                         source_t2w, defaced_t1, T2_file
                     )
-                    T2_overlay = plot_overlay(brainmask_t2, defaced_t2)
                     T2_gif = nifti_to_gif(defaced_t2)
-                    # TODO: move files
+                    # Create brainmask
+                    if brainextraction is not None:
+                        brainmask_path = os.path.splitext(source_t2w)[0]
+                        while os.path.splitext(brainmask_path)[1]:
+                            brainmask_path = os.path.splitext(brainmask_path)[0]
+                        brainmask_path += "_brainmask.nii.gz"
+                        if brainextraction == "bet":
+                            brainmask_t2 = run_brain_extraction_bet(
+                                source_t2w, bet_frac[0], brainmask_path
+                            )
+                        elif brainextraction == "nobrainer":
+                            brainmask_t2 = run_brain_extraction_nb(
+                                source_t2w, brainmask_path
+                            )
+                        T2_overlay = plot_overlay(brainmask_t2, defaced_t2)

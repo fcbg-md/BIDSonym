@@ -60,7 +60,8 @@ def get_parser():
         "--brainextraction",
         help="What algorithm should be used for pre-defacing brain extraction \
                         (outputs will be used in quality control).",
-        choices=["bet", "nobrainer"],
+        choices=["bet", "nobrainer", None],
+        default=None,
     )
     parser.add_argument(
         "--bet_frac",
