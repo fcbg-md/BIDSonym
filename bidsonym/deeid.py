@@ -23,10 +23,10 @@ def deeid(
     analysis_level,
     participant_label,
     deid,
-    deface_t2w,
     del_meta,
     brainextraction,
     bet_frac,
+    deface_t2w=True,
     skip_bids_validation=False,
     verbose=None,
 ):
