@@ -24,6 +24,10 @@ jobs:
     defaults:
       run:
         shell: bash
+
+    env:
+      SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL : "True"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
