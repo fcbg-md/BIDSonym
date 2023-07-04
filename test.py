@@ -48,7 +48,8 @@ if build:
 arguments = []
 
 # deepdefacer -> nibabel.deprecator.ExpiredDeprecationError: get_data() is deprecated in favor of get_fdata()
-for deid in ["pydeface", "mri_deface", "quickshear", "mridefacer"]:
+# mridefacer error
+for deid in ["pydeface", "mri_deface", "quickshear"]:
     argument = [
         "--participant_label",
         "02",
@@ -90,6 +91,7 @@ argument = [
     "--deface_t2w",
     "/input",
     "participant",
+    "--brainextraction",
     "nobrainer",
     "--verbose",
     "DEBUG",
@@ -99,7 +101,7 @@ arguments.append(argument)
 # group
 argument = [
     "--deid",
-    deid,
+    "pydeface",
     "--deface_t2w",
     "--verbose",
     "DEBUG",
@@ -109,7 +111,6 @@ argument = [
 arguments.append(argument)
 
 
-results = list()
 source_folder = r"C:\Users\victor.ferat\Documents\DATA\ds004590_minimal"
 for argument in arguments:
     # Create a temporary directory
@@ -130,4 +131,4 @@ for argument in arguments:
     )
     if exit_code['StatusCode'] != 0:
         print(exit_code, logs)
-    results.append([argument, exit_code, logs])
+        break

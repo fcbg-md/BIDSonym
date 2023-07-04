@@ -134,8 +134,7 @@ def run_quickshear(in_file, out_file):
     )
     inputnode.inputs.in_file = in_file
     quickshear.inputs.out_file = out_file
-    results = deface_wf.run()
-    out_file = results.outputs.quickshear.out_file
+    deface_wf.run()
     return out_file
 
 
@@ -264,7 +263,7 @@ def run_t2w_deface(in_file, t1w_deface_mask, out_file):
 
     from bidsonym.utils import deface_t2w
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
-    
+
     deface_wf = pe.Workflow("deface_wf")
     inputnode = pe.Node(niu.IdentityInterface(["in_file"]), name="inputnode")
     flirtnode = pe.Node(

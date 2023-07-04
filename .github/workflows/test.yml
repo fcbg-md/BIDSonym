@@ -1,0 +1,38 @@
+name: test
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+# workflow name, PR number (empty on push), push ref (empty on PR)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: true
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Generate docker file
+        run: ./generate_images.sh
+        
+      - name: Build Docker image
+        run: docker build -t bidsonym_tests .
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          architecture: 'x64'
+      - name: Install test dependencies
+        run: |
+          python -m pip install --progress-bar off --upgrade pip setuptools wheel
+          python -m pip install --progress-bar off docker pytest
+      - name: Test
+        run: pytest bidsonym --junitxml=junit/test-results.xml --cov=bidsonym --cov-report=xml
