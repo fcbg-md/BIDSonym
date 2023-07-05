@@ -38,4 +38,4 @@ jobs:
           python -m pip install --progress-bar off --upgrade pip setuptools wheel
           python -m pip install --progress-bar off docker pytest
       - name: Test
-        run: pytest bidsonym --junitxml=junit/test-results.xml --cov=bidsonym --cov-report=xml
+        run: pytest bidsonym
