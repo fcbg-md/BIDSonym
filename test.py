@@ -82,6 +82,7 @@ argument = [
 ]
 arguments.append(argument)
 
+arguments = list()
 # nobrainer
 argument = [
     "--participant_label",
@@ -89,10 +90,10 @@ argument = [
     "--deid",
     "pydeface",
     "--deface_t2w",
-    "/input",
-    "participant",
     "--brainextraction",
     "nobrainer",
+    "/input",
+    "participant",
     "--verbose",
     "DEBUG",
 ]

@@ -18,6 +18,6 @@ def run_container(image, arguments, volumes):
 
 
 def test_version():
-    exit_code, logs = run_container(image, ["--version"], None)
-    assert exit_code == 0
+    status, logs = run_container(image, ["--version"], None)
+    assert status['StatusCode'] == 0
     assert __version__ in logs
