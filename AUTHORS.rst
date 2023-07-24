@@ -13,3 +13,4 @@ Contributors
 
 * Kirstie Whitaker 
 * Jean-Baptiste Poline
+* Victor Férat

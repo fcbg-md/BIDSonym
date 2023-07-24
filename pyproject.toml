@@ -1,0 +1,132 @@
+[build-system]
+requires = ['setuptools >= 61.0.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'bidsonym'
+version = '0.1.0-dev'
+description = 'A BIDSapp for deidentification of neuroimaging data.'
+readme = 'README.md'
+license = {file = 'LICENSE'}
+requires-python = '>=3.8'
+authors = [
+    {name = 'Peer Herholz', email = 'herholz.peer@gmail.com'},
+    {name = 'Victor Férat', email = 'victor.ferat@live.fr'},
+]
+maintainers = [
+    {name = 'Victor Férat', email = 'victor.ferat@live.fr'},
+]
+keywords = [
+    'python',
+    'neuroscience',
+    'neuroimaging',
+    'mri',
+    'anonymization',
+    'BIDS',
+]
+classifiers = [
+    'Operating System :: Unix',
+    'Programming Language :: Python :: 3 :: Only',
+    'Natural Language :: English',
+    'License :: OSI Approved :: BSD License',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Developers',
+    'Topic :: Scientific/Engineering',
+]
+dependencies = [
+    'argparse',
+    'pandas',
+    'nibabel',
+    'nipype',
+    'nilearn',
+    'duecredit',
+    'pybids',
+    'matplotlib',
+    'gif_your_nifti @ git+https://github.com/miykael/gif_your_nifti.git',
+    'pydeface==2.0.2',
+    'quickshear==1.2.0',
+    'nobrainer==0.4.0',
+    'deepdefacer',
+]
+
+[project.optional-dependencies]
+build = ['build', 'twine']
+docs = [
+        'sphinx',
+        'doctr',
+        'numpydoc',
+        'sphinx-copybutton',
+        'sphinx_rtd_theme',
+        'sphinx-argparse',
+]
+style = [
+    'bibclean',
+    'black',
+    'codespell',
+    'isort',
+    'flake8',
+    'pydocstyle[toml]',
+]
+test = [
+    'pytest==7.0.1',
+    'pytest-azurepipelines',
+    'pytest-cov',
+]
+all = [
+    'bidsonym[build]',
+    'bidsonym[dev]',
+    'bidsonym[style]',
+]
+
+[project.urls]
+homepage = 'https://github.com/PeerHerholz/BIDSonym'
+documentation = 'https://github.com/PeerHerholz/BIDSonym'
+source = 'https://github.com/PeerHerholz/BIDSonym'
+tracker = 'https://github.com/PeerHerholz/BIDSonym/issues'
+
+[project.scripts]
+bidsonym = 'bidsonym.commands:main'
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ['bidsonym*']
+exclude = ['bidsonym*tests']
+
+[tool.black]
+line-length = 79
+target-version = ['py37']
+include = '\.pyi?$'
+extend-exclude = '''
+(
+      __pycache__
+    | \.github
+    | setup.py
+    | docs/
+)
+'''
+[tool.isort]
+profile = 'black'
+multi_line_output = 3
+line_length = 79
+py_version = 37
+extend_skip_glob = [
+    'setup.py',
+]
+
+[tool.coverage.run]
+branch = true
+cover_pylib = false
+omit = [
+    '**/__init__.py',
+    '**_version.py',
+    '**/tests/**',
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    'pragma: no cover',
+    'if __name__ == .__main__.:',
+]
+precision = 2

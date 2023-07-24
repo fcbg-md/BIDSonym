@@ -1,0 +1,52 @@
+name: Docker
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+# workflow name, PR number (empty on push), push ref (empty on PR)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: true
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Make script executable
+        run: chmod +x ./generate_images.sh
+
+      - name: Generate docker file
+        run: ./generate_images.sh
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2.2.0
+        with:
+          username: gitopsfcbg
+          password: ${{ secrets.CAMPUSBIOTECH_PROD_FLUXCD_DOCKERHUB }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4.6.0
+        with:
+          images: docker.io/fcbg/${{ github.event.repository.name }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Upload Dockerfile
+        uses: actions/upload-artifact@v3
+        with:
+          name: dockerfile
+          path: Dockerfile
